@@ -2,6 +2,8 @@
 
 AI Agent 沙盒產品的第一版可操作介面。這是本機模擬，沒有真正的 VM、Agent API、shell 執行或收費。
 
+線上展示：https://our-sandbox-agent.github.io/sandbox-console/
+
 ## 啟動
 
 Node.js 20.19+ 或 22.12+。
