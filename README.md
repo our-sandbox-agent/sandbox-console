@@ -23,7 +23,16 @@ npm run dev -- --port 4173
 - 模擬 terminal：help、pwd、ls、status、clear、sandbox claude / codex / harness。其他輸入不執行。
 - 個別沙盒的檔案及資料夾上傳、相對路徑保留、原始內容下載。每檔上限 10 MB。
 - 三段示意費率與按狀態累計的 session 費用，4 vCPU 為 2 vCPU 示意費率的兩倍。
+- 自動降級：無活動 N 分鐘 Active → Idle，再 M 分鐘 → Suspend，門檻可在 Usage 頁調整，詳情頁顯示倒數。
+- Snapshot / Fork：對沙盒建立快照，從快照分支出新沙盒（含檔案）。
+- 從 git repo URL 建立沙盒（模擬 clone）。
+- 終端新增 sandbox ls / connect <id> / suspend / snapshot、git status。
+- Usage 頁與 E2B、Daytona、Modal、Fly Sprites、Vercel 的同小時工作成本比較。
 - 手機與桌面布局。
+
+## 研究與建議
+
+競品比較、痛點與優化建議見 [docs/research.md](docs/research.md)。
 
 ## 資料與限制
 
