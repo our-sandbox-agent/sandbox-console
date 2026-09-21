@@ -39,9 +39,11 @@ npm run dev -- --port 4173
 
 競品比較、痛點與優化建議見 [docs/research.md](docs/research.md)。
 
-8 步實作計劃：短版 [docs/plan.md](docs/plan.md)，詳細版 [docs/plan-detail.md](docs/plan-detail.md)。
+受限試用實作計劃：短版 [docs/plan.md](docs/plan.md)，詳細版 [docs/plan-detail.md](docs/plan-detail.md)。
 
 語言決策：[Runner 語言 ADR（Accepted：Runner 與 CLI 用 Go）](docs/adr/runner-language.md)。
+
+契約提案：[生命週期、API 與資料保存](docs/adr/sandbox-lifecycle.md)。
 
 ## 資料與限制
 
