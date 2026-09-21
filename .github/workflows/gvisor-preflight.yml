@@ -1,0 +1,23 @@
+name: Validate gVisor preflight guards
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/*gvisor*'
+      - '.github/workflows/gvisor-preflight.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/*gvisor*'
+      - '.github/workflows/gvisor-preflight.yml'
+permissions:
+  contents: read
+jobs:
+  preflight-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -B -m unittest discover -s scripts -p 'test_gvisor_preflight.py'
