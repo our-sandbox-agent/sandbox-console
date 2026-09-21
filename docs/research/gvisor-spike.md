@@ -8,7 +8,7 @@ Refs #8，依賴 [#7 契約 PR](https://github.com/our-sandbox-agent/sandbox-con
 
 實驗限 2–3 工程人天：第一天版本與基本工作負載，第二天 PTY／持久化／限制，第三天重現失敗及整理判斷。等待主機不算測試成功，也不把等待時間假裝成實作估時。
 
-操作者先確認隔離的測試機及 headroom，指定測試 CPU/memory/PID/磁碟限額，再進行矩陣。版本記錄包含 kernel/architecture/cgroup、Docker/runsc、診斷 image digest、Claude/Node/git/tmux 版本與安裝來源。診斷 image 需包含 shell、git、Node/npm、Claude、tmux、python3；固定 digest 並人工核對內容，不使用浮動 latest。不自動下載或執行來路不明安裝腳本。
+操作者先確認隔離的測試機及 headroom，指定測試 CPU/memory/PID/磁碟限額，再進行矩陣。版本記錄包含 kernel/architecture/cgroup、Docker/runsc、診斷 image digest、Claude/Node/git/tmux 版本與安裝來源。診斷 image 需包含 shell、git、Node/npm、Claude、tmux、python3；固定 digest 並人工核對內容，不使用浮動 latest；本機 build 未 push 的映像沒有 repo digest，改用 `docker image inspect --format {{.Id}}` 取得 image ID 來釘。Claude Code 的 native／npm 安裝會在背景自動更新，環境必須設 `DISABLE_AUTOUPDATER=1`，每列測試前後都記 `claude --version`，前後不一致該列重測。不自動下載或執行來路不明安裝腳本。
 
 ## 可先跑的唯讀檢查
 

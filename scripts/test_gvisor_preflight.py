@@ -1,5 +1,6 @@
 """Exercise no-contact guards and prove ready never means runtime go."""
 import importlib.util
+import json
 from pathlib import Path
 import subprocess
 import unittest
@@ -9,6 +10,7 @@ spec = importlib.util.spec_from_file_location("preflight", Path(__file__).with_n
 preflight = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(preflight)
 DIGEST = "diagnostic@sha256:" + "a" * 64
+ALLOWED_DOCKER_VERBS = {("version", "--format"), ("info", "--format"), ("image", "inspect")}
 
 
 class PreflightTests(unittest.TestCase):
@@ -34,10 +36,40 @@ class PreflightTests(unittest.TestCase):
             for call in run.call_args_list:
                 self.assertNotIn("DOCKER_CONTEXT", call.kwargs["env"])
                 self.assertNotIn("DOCKER_HOST", call.kwargs["env"])
+                self.assertEqual(call.kwargs.get("timeout"), 15)
+                self.assertTrue(call.kwargs.get("check"))
                 args = call.args[0]
                 if args[0] == "docker":
                     self.assertEqual(args[1:3], ["--host", "unix:///docker.sock"])
-                    self.assertIn(args[3], ("version", "info", "image"))
+                    self.assertIn(tuple(args[3:5]), ALLOWED_DOCKER_VERBS)
+                else:
+                    self.assertEqual(args, ["runsc", "--version"])
+
+    def test_missing_runsc_binary_never_contacts_docker(self):
+        with patch.object(preflight.platform, "system", return_value="Linux"), patch.object(preflight.shutil, "which", side_effect=lambda name: "/bin/docker" if name == "docker" else None), patch.object(preflight.subprocess, "run") as run:
+            result = preflight.collect("unix:///docker.sock", DIGEST)
+            run.assert_not_called()
+            self.assertIn("docker_and_runsc_binaries_required", result["blockers"])
+
+    def test_timeout_is_a_blocker_without_leak(self):
+        with patch.object(preflight.platform, "system", return_value="Linux"), patch.object(preflight.shutil, "which", return_value="/bin/tool"), patch.object(preflight.subprocess, "run", side_effect=subprocess.TimeoutExpired(["docker"], 15, output="SECRET")):
+            result = preflight.collect("unix:///docker.sock", DIGEST)
+            self.assertEqual(result["verdict"], "blocked_environment")
+            self.assertNotIn("SECRET", json.dumps(result))
+
+    def test_image_id_pin_and_missing_image(self):
+        image_id = "sha256:" + "b" * 64
+        ok = [subprocess.CompletedProcess([], 0, stdout=x) for x in ["29", "linux", "2", "systemd", '{"runsc":{}}', "runsc version test", image_id]]
+        with patch.object(preflight.platform, "system", return_value="Linux"), patch.object(preflight.shutil, "which", return_value="/bin/tool"), patch.object(preflight.subprocess, "run", side_effect=ok):
+            self.assertEqual(preflight.collect("unix:///docker.sock", image_id)["verdict"], "ready_for_manual_matrix_not_go")
+        mismatch = [subprocess.CompletedProcess([], 0, stdout=x) for x in ["29", "linux", "2", "systemd", '{"runsc":{}}', "runsc version test", "sha256:" + "c" * 64]]
+        with patch.object(preflight.platform, "system", return_value="Linux"), patch.object(preflight.shutil, "which", return_value="/bin/tool"), patch.object(preflight.subprocess, "run", side_effect=mismatch):
+            self.assertIn("image_id_mismatch", preflight.collect("unix:///docker.sock", image_id)["blockers"])
+        missing = [subprocess.CompletedProcess([], 0, stdout=x) for x in ["29", "linux", "2", "systemd", '{"runsc":{}}', "runsc version test"]] + [subprocess.CalledProcessError(1, [], stderr="No such image SECRET")]
+        with patch.object(preflight.platform, "system", return_value="Linux"), patch.object(preflight.shutil, "which", return_value="/bin/tool"), patch.object(preflight.subprocess, "run", side_effect=missing):
+            result = preflight.collect("unix:///docker.sock", DIGEST)
+            self.assertIn("pinned_image_not_present", result["blockers"])
+            self.assertNotIn("SECRET", json.dumps(result))
 
     def test_failure_does_not_leak_stderr(self):
         with patch.object(preflight.platform, "system", return_value="Linux"), patch.object(preflight.shutil, "which", return_value="/bin/tool"), patch.object(preflight.subprocess, "run", side_effect=subprocess.CalledProcessError(1, [], stderr="SECRET")):

@@ -39,14 +39,15 @@ Error 必須保留 `last_confirmed_state`、錯誤代碼與資源清單；容量
 
 | 方法／路徑 | 契約 |
 |---|---|
-| POST /v1/sandboxes | 只接受 `agent=claude`；驗證資源、repo、租戶及容量；202 + operation_id + sandbox_id |
-| GET /v1/sandboxes/{id} | desired／observed、generation、version、pending operation、last_confirmed_at、volume IDs |
+| POST /v1/sandboxes | 只接受 `agent=claude`；驗證資源、repo、租戶及容量；可選 `runtime_deadline_at`（每沙盒，UTC，null 表示無上限）；202 + operation_id + sandbox_id |
+| GET /v1/sandboxes/{id} | desired／observed、generation、version、pending operation、last_confirmed_at、volume IDs；依狀態附加：Error 時 `last_confirmed_state`、`error{code, resources[]}`；Active／Idle 時 `hold{reason: busy|unknown|permission_wait, since}` 與 `next_transition_at`（無倒數為 null）；`runtime_deadline_at`；Suspend／Active 時 `session{id, cwd}`（無紀錄為 null） |
 | POST /v1/sandboxes/{id}/state | `{state: Active|Idle|Suspend, expected_version, suspend_mode?: cold}`；202 + operation_id |
 | DELETE /v1/sandboxes/{id} | 明確確認資料刪除範圍與 expected_version；202，刪除程序與首版 workspace/home volumes |
 | GET /v1/operations/{operation_id} | pending/running/succeeded/failed，result、錯誤、可否重試；租戶授權同 sandbox |
 | PUT /v1/workspaces/{id}/policy | expected_version + 完整 workspace policy；保留審計及生效時間 |
+| PATCH /v1/sandboxes/{id}/deadline | `{runtime_deadline_at: <UTC>|null, expected_version}`；延長、縮短或取消單一沙盒的運行上限；200 回新值並記審計 |
 
-create／state／destroy 皆需 `Idempotency-Key`，以租戶＋操作作用域去重；同 key 同 body 回原 operation，同 key 不同 body 回 409。expected_version 失配或操作衝突回 409，錯誤訊息讓客戶端重新讀取，不自動覆蓋。資源不足回 409 `capacity_exceeded`，schema 錯誤回 422，未授權資源以 404 避免跨租戶探測。同步完成的相同目標請求可回 200 並附既有狀態，不能重複產生實際轉移。
+create／state／destroy 皆需 `Idempotency-Key`，以租戶＋操作作用域去重；同 key 同 body 回原 operation，同 key 不同 body 回 409。expected_version 失配或操作衝突回 409，錯誤訊息讓客戶端重新讀取，不自動覆蓋。資源不足回 409 `capacity_exceeded`，schema 錯誤回 422，未授權資源以 404 避免跨租戶探測。 Suspend→Active 未附有效憑證回 409 `credentials_required`，不進 Resuming、不建 operation。首版 key 由 CLI 經 request body 送控制平面，端點與欄位在 #12／#14 定；憑證不得參與 Idempotency-Key 的 body 比對，也不得進 log。同步完成的相同目標請求可回 200 並附既有狀態，不能重複產生實際轉移。
 
 每次執行實體替換／冷恢復分配新 generation，命令及心跳帶 generation；stale generation 不可提交狀態或事件。每沙盒最多一個變更 operation，fencing token 單調增加。操作 timeout 不等於失敗後資源已消失；先對帳，未知則 Lost。
 
@@ -54,13 +55,13 @@ create／state／destroy 皆需 `Idempotency-Key`，以租戶＋操作作用域�
 
 ## 4. Workspace policy 與長任務
 
-policy 欄位：`auto_idle_enabled`、`idle_after_seconds`、`auto_suspend_enabled`、`suspend_after_completed_seconds`、`max_runtime_seconds: null|positive integer`、`version`。無預設運行期限；自動門檻的數值在 #19 以工作負載測試確定，未確定前不在正式設定偷填常數。展示版倒數不作正式預設。
+policy 欄位：`auto_idle_enabled`、`idle_after_seconds`、`auto_suspend_enabled`、`suspend_after_completed_seconds`、`default_runtime_seconds: null|positive integer`（只作建立沙盒時 `runtime_deadline_at` 的預設，改 policy 不影響既有沙盒）、`version`。無預設運行期限；自動門檻的數值在 #19 以工作負載測試確定，未確定前不在正式設定偷填常數。展示版倒數不作正式預設。
 
 - Idle 判定需無使用者互動且無忙碌證據；CPU 低不等於結束，等待模型／網路的受管工作仍算 busy。CPU 需求、任務開始或輸入恢復 Active；CPU 判定包含限速造成的 throttling 指標，不能只看被壓低後的用量。
 - completion event 需匹配目前 generation、session、task 與序號，晚到的舊完成訊號不能蓋掉新 busy。子任務、背景工作、權限等待或無法辨識的執行活動阻止 Suspend。新活動取消 countdown。
 - hook 只是一個訊號，不是信任根；缺漏、過期、偽造或 API error 不視為任務完成。busy lease 過期改 unknown 並提示，不視為 idle。
 - 使用者手動 Suspend 須知道會停止執行中程序；執行前保存可保存資料，但不自動 git commit／push，不承諾應用程式尚未落盤的資料。
-- 使用者選擇運行上限時，UI 顯示到期時間及提醒／延長方式，到期原因記 `runtime_limit`，不記為 idle。無預設上限不等於無配額；新增容量不足即拒絕，磁碟／主機事故走明示 incident 路徑。
+- 運行上限是每沙盒的 `runtime_deadline_at`：建立時可選填（或由 workspace 預設帶入），之後可用 deadline 端點延長、縮短或取消；以 wall clock 計，冷恢復不重算。到期執行 cold Suspend，reason 記 `runtime_limit`，不記為 idle；到期會中斷執行中的工作，UI 與 CLI 在建立時明示到期時間，提醒提前量由 #19 定。無預設上限不等於無配額；新增容量不足即拒絕，磁碟／主機事故走明示 incident 路徑。
 
 ## 5. 保存矩陣
 
