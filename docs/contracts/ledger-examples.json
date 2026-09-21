@@ -1,0 +1,228 @@
+[
+  {
+    "name": "active-to-idle",
+    "segments": [
+      {
+        "start_ms": 0,
+        "end_ms": 1000,
+        "quantity": 2000,
+        "bucket": "cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved"
+      },
+      {
+        "start_ms": 1000,
+        "end_ms": 3000,
+        "quantity": 500,
+        "bucket": "cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved"
+      }
+    ],
+    "expected_units": {
+      "cpu": 3000000
+    }
+  },
+  {
+    "name": "cold-suspend-keeps-volume",
+    "segments": [
+      {
+        "start_ms": 0,
+        "end_ms": 1000,
+        "quantity": 1000,
+        "bucket": "cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved"
+      },
+      {
+        "start_ms": 0,
+        "end_ms": 3000,
+        "quantity": 1024,
+        "bucket": "volume",
+        "resource": "v1",
+        "meter": "volume_provisioned"
+      }
+    ],
+    "expected_units": {
+      "cpu": 1000000,
+      "volume": 3072000
+    }
+  },
+  {
+    "name": "snapshot-expiry-is-not-release",
+    "segments": [
+      {
+        "start_ms": 0,
+        "end_ms": 3000,
+        "quantity": 2048,
+        "bucket": "snapshot",
+        "resource": "s1",
+        "meter": "snapshot_stored"
+      }
+    ],
+    "expected_units": {
+      "snapshot": 6144000
+    }
+  },
+  {
+    "name": "lost-lower-bound",
+    "segments": [
+      {
+        "start_ms": 0,
+        "end_ms": 1000,
+        "quantity": 1000,
+        "bucket": "cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved"
+      },
+      {
+        "start_ms": 1000,
+        "end_ms": 3000,
+        "quantity": 1000,
+        "bucket": "cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved",
+        "certainty": "uncertain"
+      }
+    ],
+    "expected_units": {
+      "cpu": 1000000
+    },
+    "expected_uncertain_resource_ms": 2000
+  },
+  {
+    "name": "lost-corrected-stop",
+    "segments": [
+      {
+        "start_ms": 0,
+        "end_ms": 2000,
+        "quantity": 1000,
+        "bucket": "cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved"
+      }
+    ],
+    "expected_units": {
+      "cpu": 2000000
+    }
+  },
+  {
+    "name": "utc-month-boundary",
+    "segments": [
+      {
+        "start_ms": 1790812799000,
+        "end_ms": 1790812800000,
+        "quantity": 1000,
+        "bucket": "2026-09/cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved"
+      },
+      {
+        "start_ms": 1790812800000,
+        "end_ms": 1790812801000,
+        "quantity": 1000,
+        "bucket": "2026-10/cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved"
+      }
+    ],
+    "expected_units": {
+      "2026-09/cpu": 1000000,
+      "2026-10/cpu": 1000000
+    }
+  },
+  {
+    "name": "rate-version-boundary",
+    "segments": [
+      {
+        "start_ms": 0,
+        "end_ms": 1000,
+        "quantity": 1000,
+        "bucket": "cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved",
+        "rate": [
+          1,
+          1000000
+        ]
+      },
+      {
+        "start_ms": 1000,
+        "end_ms": 2000,
+        "quantity": 1000,
+        "bucket": "cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved",
+        "rate": [
+          2,
+          1000000
+        ]
+      }
+    ],
+    "expected_units": {
+      "cpu": 2000000
+    },
+    "expected_minor": {
+      "cpu": 3
+    }
+  },
+  {
+    "name": "same-state-resize",
+    "segments": [
+      {
+        "start_ms": 0,
+        "end_ms": 1000,
+        "quantity": 1000,
+        "bucket": "cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved"
+      },
+      {
+        "start_ms": 1000,
+        "end_ms": 2000,
+        "quantity": 2000,
+        "bucket": "cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved"
+      }
+    ],
+    "expected_units": {
+      "cpu": 3000000
+    }
+  },
+  {
+    "name": "round-once-per-line",
+    "segments": [
+      {
+        "start_ms": 0,
+        "end_ms": 500,
+        "quantity": 1000,
+        "bucket": "cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved",
+        "rate": [
+          1,
+          1000000
+        ]
+      },
+      {
+        "start_ms": 500,
+        "end_ms": 1000,
+        "quantity": 1000,
+        "bucket": "cpu",
+        "resource": "r1",
+        "meter": "cpu_reserved",
+        "rate": [
+          1,
+          1000000
+        ]
+      }
+    ],
+    "expected_units": {
+      "cpu": 1000000
+    },
+    "expected_minor": {
+      "cpu": 1
+    }
+  }
+]
