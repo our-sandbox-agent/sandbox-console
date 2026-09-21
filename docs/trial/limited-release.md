@@ -20,7 +20,7 @@ Proposed，2026-09-22。Closes #46（規格）；依賴 [#7 契約提案](https:
 | G04 #22 | 阻擋宿主、控制平面、其他租戶、私網、link-local、metadata；覆蓋 IPv4/IPv6、DNS 及 redirect | 測試 direct IP、DNS 解析到受限 IP、重新解析、HTTP redirect 及 policy 更新前連線；拒絕目的地不能靠 hostname 字串黑名單；必要公開 Git/套件/模型流量仍成功 |
 | G05 #11/#17/#18 | 主機及租戶原子容量預留、磁碟限額、預留 headroom；獨立 watchdog；Lost 不釋放未知資源 | 同時 create 超配只允許可容納數量；kill Runner、網路中斷、磁碟滿、容器 OOM 後，無雙開／跨租戶影響；host fencing 有證據，容量確認停止才歸還 |
 | G06 #12/#23 | workspace/home 保存範圍明確；備份 allowlist、加密、權限與刪除期限 | 寫入成果＋對話後 cold restart 驗 hash/session；備份在獨立空白目的地還原且不可跨租戶讀；假 key/gh token 不在備份；刪除與 retention 到期可驗證；單一受邀者退出演練：撤銷後其全部 sandbox、volume 與備份在放行表填的期限內確認消失，只剩不含專案內容的 tombstone/audit |
-| G07 #13/#14/#20 | 斷線不停止、可重連；使用者 push 或只下載 cp 取回成果 | 交代工作後關客戶端一小時，再接回看到結果並取回；push 無權限仍可 cp；跨租戶、`..`、symlink、archive 解壓逃逸均拒絕 |
+| G07 #13/#14/#20 | 斷線不停止、可重連；使用者 push 或只下載 cp 取回成果；資料夾打包上傳（簡單版）含大小上限與忽略清單 | 交代工作後關客戶端一小時，再接回看到結果並取回；push 無權限仍可 cp；跨租戶、`..`、symlink、archive 解壓逃逸均拒絕；上傳超過上限被拒、`.env` 等被忽略且 UI 列出 |
 | G08 #19 | 無預設 runtime cap；busy/unknown 保護，自動 Suspend 需可信完成條件 | 無鍵盤、等待模型、hook 缺漏/舊 generation、新背景任務均不誤 Suspend；有效完成倒數、新活動取消；使用者自選 deadline 以 runtime_limit 記錄 |
 | G09 #9/#23/#25 | 資源事件、容量與磁碟告警；有人處理長時間 Idle | 對照實際 runtime/volume 與帳本；Lost 標不確定；低容量會拒絕新增並通知負責人，不默默刪除資料。無費率時只顯示用量 |
 | G10 #23 | 書面事故處理、存取撤銷、隔離、備份還原及通知責任 | 演練：停止新 allocation → 撤銷入口 → fence/隔離故障執行實體 → 保留可救資料 → 還原 → 通知受影響者。留下時間線及結果，不能用直接刪 volume 當通用復原 |
@@ -47,6 +47,7 @@ G03 的排除是平台處理保證；Agent 在沙盒內仍可讀 key 並可能�
 | Release ID、Git SHA、image/Claude/runsc/Docker 版本、環境 | 待填 |
 | 3–5 位受邀者名單（私密位置）、帳戶撤銷方式、退出／結束時的資料刪除期限與 audit 保留天數 | 待填 |
 | 每租戶並行數／CPU／memory／PID／workspace/home 磁碟額度 | 待填 |
+| 每租戶每分／時／日的建立與啟動次數上限、上傳大小上限 | 待填 |
 | 主機可用量、headroom、容量／磁碟告警門檻及接收者 | 待填 |
 | 備份選定資料範圍、RPO/RTO 實測、保留與刪除期限 | 待填 |
 | audit／usage／tombstone 保存期限及可存取者 | 待填 |
