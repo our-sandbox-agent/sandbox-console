@@ -16,10 +16,10 @@ Proposed，2026-09-22。Closes #46（規格）；依賴 [#7 契約提案](https:
 |---|---|---|
 | G01 #8/#10/#11 | 固定 runsc、非 root、無 privileged／Docker socket／host mount；資源限額 | 保存 gVisor 矩陣 go；容器不能取得宿主／其他租戶資源；實際 CPU、記憶體、PID 限制生效 |
 | G02 #15/#16 | 邀請名單及每次資源授權；CLI/Web/API/WS/download 一致 | 兩個測試帳戶互換 sandbox、operation、volume ID，跨租戶一律拒絕且無資料；撤銷邀請後既有 token/WS 也失效 |
-| G03 #12/#21 | API key 僅短期注入，禁止寫入 DB、log、trace、image、一般 backup；禁止 tmpfs 秘密換頁到未加密 swap／core dump | 用可辨識假秘密跑 create、錯誤、重連、cold stop/start/destroy，掃描輸出與備份；停止後注入消失；缺 key 不啟動；使用者可撤銷供應商 key |
+| G03 #12/#21 | API key 僅短期注入，禁止寫入 DB、log、trace、image、workspace/home volume、一般 backup；禁止 tmpfs 秘密換頁到未加密 swap／core dump | 用可辨識假秘密跑 create、錯誤、重連、cold stop/start/destroy，掃描輸出、tmpfs、env、兩顆 volume（含 home 內 Claude 設定檔）與備份皆無假秘密；停止後注入消失；缺 key 不啟動；使用者可撤銷供應商 key |
 | G04 #22 | 阻擋宿主、控制平面、其他租戶、私網、link-local、metadata；覆蓋 IPv4/IPv6、DNS 及 redirect | 測試 direct IP、DNS 解析到受限 IP、重新解析、HTTP redirect 及 policy 更新前連線；拒絕目的地不能靠 hostname 字串黑名單；必要公開 Git/套件/模型流量仍成功 |
 | G05 #11/#17/#18 | 主機及租戶原子容量預留、磁碟限額、預留 headroom；獨立 watchdog；Lost 不釋放未知資源 | 同時 create 超配只允許可容納數量；kill Runner、網路中斷、磁碟滿、容器 OOM 後，無雙開／跨租戶影響；host fencing 有證據，容量確認停止才歸還 |
-| G06 #12/#23 | workspace/home 保存範圍明確；備份 allowlist、加密、權限與刪除期限 | 寫入成果＋對話後 cold restart 驗 hash/session；備份在獨立空白目的地還原且不可跨租戶讀；假 key/gh token 不在備份；刪除與 retention 到期可驗證 |
+| G06 #12/#23 | workspace/home 保存範圍明確；備份 allowlist、加密、權限與刪除期限 | 寫入成果＋對話後 cold restart 驗 hash/session；備份在獨立空白目的地還原且不可跨租戶讀；假 key/gh token 不在備份；刪除與 retention 到期可驗證；單一受邀者退出演練：撤銷後其全部 sandbox、volume 與備份在放行表填的期限內確認消失，只剩不含專案內容的 tombstone/audit |
 | G07 #13/#14/#20 | 斷線不停止、可重連；使用者 push 或只下載 cp 取回成果 | 交代工作後關客戶端一小時，再接回看到結果並取回；push 無權限仍可 cp；跨租戶、`..`、symlink、archive 解壓逃逸均拒絕 |
 | G08 #19 | 無預設 runtime cap；busy/unknown 保護，自動 Suspend 需可信完成條件 | 無鍵盤、等待模型、hook 缺漏/舊 generation、新背景任務均不誤 Suspend；有效完成倒數、新活動取消；使用者自選 deadline 以 runtime_limit 記錄 |
 | G09 #9/#23/#25 | 資源事件、容量與磁碟告警；有人處理長時間 Idle | 對照實際 runtime/volume 與帳本；Lost 標不確定；低容量會拒絕新增並通知負責人，不默默刪除資料。無費率時只顯示用量 |
@@ -45,7 +45,7 @@ G03 的排除是平台處理保證；Agent 在沙盒內仍可讀 key 並可能�
 | 項目 | 本次值 |
 |---|---|
 | Release ID、Git SHA、image/Claude/runsc/Docker 版本、環境 | 待填 |
-| 3–5 位受邀者名單（私密位置）及帳戶撤銷方式 | 待填 |
+| 3–5 位受邀者名單（私密位置）、帳戶撤銷方式、退出／結束時的資料刪除期限與 audit 保留天數 | 待填 |
 | 每租戶並行數／CPU／memory／PID／workspace/home 磁碟額度 | 待填 |
 | 主機可用量、headroom、容量／磁碟告警門檻及接收者 | 待填 |
 | 備份選定資料範圍、RPO/RTO 實測、保留與刪除期限 | 待填 |
@@ -61,6 +61,8 @@ G03 的排除是平台處理保證；Agent 在沙盒內仍可讀 key 並可能�
 
 這是限 3–5 人、不收平台費的 Claude 沙盒試用。模型 API 費用由你的 Anthropic workspace 支付，請使用專用 workspace、設定花費上限，並知道如何撤銷 key。API key 在執行期間可被沙盒內程序讀取；平台不把它寫入一般 log 或備份，但 Agent 仍可能自行寫入檔案或對外傳送。
 
-關閉筆電不會停止工作；冷 Suspend 會停止程序，保留已落盤的指定檔案和對話，恢復時需要重新提供 key，無法還原原本的記憶體或畫面。沒有預設運行時限，你可以手動暫停或自行設定上限。
+關閉筆電或斷線不會停止執行中的工作。沒有活動時沙盒會進 Idle（CPU 受限、程序仍在）；只有在偵測到可信的完成訊號、且倒數期間沒有新活動時，才會自動冷 Suspend。長時間 Idle、達到你的配額或發生事故時，我們可能人工 Suspend 或隔離你的沙盒，會透過［通知管道］事先或事後通知。冷 Suspend 會停止程序，保留已落盤的指定檔案和對話，恢復時需要透過 CLI 重新提供 key，無法還原原本的記憶體或畫面。沒有預設運行時限，你可以手動暫停，或自行為沙盒設定到期時間，到期會冷 Suspend 並中斷執行中的工作。
+
+試用結束或你要求退出後，我們在［N 天］內刪除你的沙盒、磁碟與備份，只保留不含專案內容的操作紀錄［M 天］。為了備份與事故還原，平台維運人員有能力讀取你的工作區與備份內容，不會用於其他目的。
 
 完整外網白名單尚未提供；請先用可承受遺失的測試專案，不放正式服務憑證。備份只涵蓋你確認的範圍：［填範圍／保留期限／實測 RPO/RTO］。目前沒有正式 SLA；事故請聯絡［人／管道／窗口］。試用期間仍受［資源額度］限制。進入試用前我們會提供以上配置及已知限制供你確認。

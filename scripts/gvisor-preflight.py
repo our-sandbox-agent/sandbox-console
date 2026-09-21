@@ -21,7 +21,7 @@ def collect(socket=None, image=None):
     if not socket or not re.fullmatch(r"unix:///[^\s]+", socket):
         report["blockers"].append("explicit_local_unix_docker_socket_required")
         return report
-    if not image or not re.fullmatch(r"[^\s@]+@sha256:[0-9a-f]{64}", image):
+    if not image or not re.fullmatch(r"(?:[^\s@]+@)?sha256:[0-9a-f]{64}", image):
         report["blockers"].append("pinned_image_digest_required")
         return report
     if not shutil.which("docker") or not shutil.which("runsc"):
@@ -47,8 +47,14 @@ def collect(socket=None, image=None):
         runtimes = json.loads(run(docker + ["info", "--format", "{{json .Runtimes}}"] ))
         facts["runsc_registered"] = "runsc" in runtimes
         facts["runsc_version"] = run(["runsc", "--version"])
-        facts["image_id"] = run(docker + ["image", "inspect", image, "--format", "{{.Id}}"])
+        try:
+            facts["image_id"] = run(docker + ["image", "inspect", image, "--format", "{{.Id}}"])
+        except subprocess.CalledProcessError:
+            report["blockers"].append("pinned_image_not_present")
+            return report
         facts["image_digest"] = image
+        if image.startswith("sha256:") and facts["image_id"] != image:
+            report["blockers"].append("image_id_mismatch")
         if facts["daemon_os"] != "linux":
             report["blockers"].append("docker_daemon_must_be_linux")
         if not facts["runsc_registered"]:
