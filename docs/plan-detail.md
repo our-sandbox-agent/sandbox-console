@@ -1,6 +1,6 @@
 # 實作計劃：詳細版（2026-09）
 
-> 語言配置正在收斂：見 [Runner 語言 ADR（Proposed）](adr/runner-language.md)。第 1 步暫時 Node Runner／第 3 步 Go 重寫不再作為必交路線；定案前不依這些段落開工，套件與估時待同時修訂。
+> 語言已定案（2026-09-21）：Runner 與 CLI 用 Go，控制平面 TypeScript。第 1 步直接以 Go 實作 Runner，第 3 步第 0 項只做接線，不再有 Node → Go 改寫。見 [Runner 語言 ADR](adr/runner-language.md)。
 
 > 這是給工程師看的完整版。創辦人先看短版 [plan.md](plan.md)。
 
@@ -104,10 +104,10 @@ M1 之前就有可展示的中間點：第 1 步第 3 週末（開發模式下�
 
 1. **主機準備**：租 KVM 型 VPS（Hetzner Cloud、DigitalOcean、EC2 一般機型），不要 OpenVZ／LXC 型（跟房東共用核心，Docker 跑不起來）。Ubuntu 24.04、4 vCPU / 8 GB。寫成可重跑的 `infra/vps-setup.sh`：先 `systemd-detect-virt`，是 openvz／lxc 就退出；官方 apt 裝 Docker Engine；照 gvisor.dev 裝 runsc；`sudo runsc install && sudo systemctl reload docker`。預設平台 systrap，用 seccomp（Linux 過濾系統呼叫的機制）攔截，不需要 /dev/kvm。為第 4、5 步預留的主機檢查也放在這支腳本：`stat -fc %T /sys/fs/cgroup` 必須是 `cgroup2fs`（cgroup v2）、核心 ≥ 5.6、資料碟以 `mkfs.xfs -m reflink=1` 格式化掛到 `/var/lib/sandbox`，Docker 的 data-root 也指到那顆碟；不符就退出並印原因，之後不用回頭動正在跑沙盒的主機。建專用使用者 `runner` 加進 docker 群組（第 5 步改成 root 跑、檔案程式另外降權）；SSH 只准金鑰；防火牆只開 22。驗證：`docker run --rm --runtime=runsc ubuntu:24.04 uname -r` 印 `4.4.0`。
 2. **沙盒映像檔** `images/agent-base/Dockerfile`：ubuntu:24.04 + git、curl、tmux、ripgrep、jq、Node 22（給 Agent 跑專案用）。非 root 使用者 agent（uid 1000），WORKDIR /workspace。用官方 `curl -fsSL https://claude.ai/install.sh | bash` 裝 Claude Code。預做首次設定：本機跑一次首次設定，把 ~/.claude.json 裡跟首次設定有關的欄位（不含 key）抄成 `images/agent-base/claude.json` COPY 進去。key 從第 1 步起就不走環境變數：runner 建容器後用 exec 把 key 寫到 `/run/sbx/anthropic_key`（owner agent、0400），`~/.claude/settings.json` 的 `apiKeyHelper` 設 `cat /run/sbx/anthropic_key`——這是第 3 步沿用的同一套，之後只在第 6 步換成 proxy 注入，總共只換一次。PID 1（容器裡第一個程序）用 `sleep infinity`，建容器時開 Init 讓 tini（容器裡負責轉發停止訊號的小程式）轉發 stop 訊號，否則每次 stop 要等 10 秒。留 ARG AGENT 給之後的 codex／harness。驗證：`claude --version`、`claude -p 'say hi'`、`claude -p "create /workspace/hello.txt containing hi" --dangerously-skip-permissions` 後 `cat` 印 `hi`。失敗就先用 `--runtime=runc` 對照，分辨是 gVisor 還是映像檔問題。
-3. **Runner daemon**（`runner/`，Node 22 + Fastify + dockerode；這是開發期版本，第 3 步做法第 0 項改寫成 Go，職責與 API 形狀不變）：所有 Docker 呼叫集中在 `runner/src/docker-adapter.js`，之後換語言、換底層都只改這一層。`POST /v1/sandboxes`：cpu ≤ 2、memGb ≤ 4，超過回 400（4 vCPU 選項先停用，第 5 步 VDS 換大機後在 `config.yaml` 解鎖）；同時 running ≤ 2，超過回 409。建容器：Runtime runsc、PidsLimit 512、Init true、StopTimeout 5、User agent、Labels `sbx.managed=true`；key 讀 /etc/sandbox-runner.env 後以 exec 寫進 `/run/sbx/anthropic_key`（做法第 2 項），不放 Env。/workspace 掛成 Docker named volume `sbx-ws-<id>`：gVisor 預設把根檔案系統的寫入放記憶體暫存層，容器一停就丟，只有 volume 會真的落地。`GET /v1/sandboxes` 直接查 Docker labels，不另存資料庫（running→Active、exited→Suspend、其他→Error）。stop／start／DELETE（連 volume 一起刪）／exec（非互動，給煙霧測試與 CLI 用）。回收器（**開發期專用**，防止忘了關的容器吃光主機；第 2 步接上控制平面時移除，改由 policy 決定，不是 session 上限）：每 10 分鐘掃一次，running 超過 4 小時 stop、exited 超過 24 小時 remove。單一固定 `Authorization: Bearer $RUNNER_TOKEN`；@fastify/cors 只放行 4173；8080 只綁 127.0.0.1；systemd 常駐。
-4. **PTY 串流** `GET /v1/sandboxes/:id/pty`（WebSocket，瀏覽器與伺服器之間的雙向長連線，以下簡稱 ws；這條端點與做法第 5 項的 `src/runner.js` 只服務開發模式，第 3 步改成 ttyd 反代與 `terminal.js` 後作廢）：協定固定不混用——客戶端→伺服器一律 JSON 文字（auth／input／resize），伺服器→客戶端一律二進位（終端輸出），錯誤走 close code。5 秒內沒 auth 就關（4401）；容器不是 running 回 4409。auth 通過後 docker exec `tmux new-session -A -s main`（有 session 就接上、沒有就新建），`hijack:true` 拿到雙向串流。ws 斷線只關串流、不殺 tmux。每沙盒同時只允許一條 ws。測試工具 `scripts/pty-probe.mjs`（約 20 行）。
+3. **Runner daemon**（`runner/`，Go 1.23+，標準庫 `net/http` + Docker 官方 Go client `github.com/docker/docker/client`；第一版就是正式語言，之後不改寫）：所有 Docker 呼叫集中在 `runner/internal/docker/`（adapter），之後換底層（runsc 直驅、Firecracker）都只改這一層並沿用同一組契約測試。`POST /v1/sandboxes`：cpu ≤ 2、memGb ≤ 4，超過回 400（4 vCPU 選項先停用，第 5 步 VDS 換大機後在 `config.yaml` 解鎖）；同時 running ≤ 2，超過回 409。建容器：Runtime runsc、PidsLimit 512、Init true、StopTimeout 5、User agent、Labels `sbx.managed=true`；key 讀 /etc/sandbox-runner.env 後以 exec 寫進 `/run/sbx/anthropic_key`（做法第 2 項），不放 Env。/workspace 掛成 Docker named volume `sbx-ws-<id>`：gVisor 預設把根檔案系統的寫入放記憶體暫存層，容器一停就丟，只有 volume 會真的落地。`GET /v1/sandboxes` 直接查 Docker labels，不另存資料庫（running→Active、exited→Suspend、其他→Error）。stop／start／DELETE（連 volume 一起刪）／exec（非互動，給煙霧測試與 CLI 用）。回收器（**開發期專用**，防止忘了關的容器吃光主機；第 2 步接上控制平面時移除，改由 policy 決定，不是 session 上限）：每 10 分鐘掃一次，running 超過 4 小時 stop、exited 超過 24 小時 remove。單一固定 `Authorization: Bearer $RUNNER_TOKEN`；CORS 只放行 4173；8080 只綁 127.0.0.1；`go build` 出單一執行檔，systemd 常駐。
+4. **PTY 串流** `GET /v1/sandboxes/:id/pty`（WebSocket，瀏覽器與伺服器之間的雙向長連線，以下簡稱 ws；這條端點與做法第 5 項的 `src/runner.js` 只服務開發模式，第 3 步改成 ttyd 反代與 `terminal.js` 後作廢）：協定固定不混用——客戶端→伺服器一律 JSON 文字（auth／input／resize），伺服器→客戶端一律二進位（終端輸出），錯誤走 close code。5 秒內沒 auth 就關（4401）；容器不是 running 回 4409。auth 通過後 docker exec `tmux new-session -A -s main`（有 session 就接上、沒有就新建），用 `ContainerExecAttach` 拿到 hijacked 雙向串流；ws 用 `github.com/coder/websocket`。ws 斷線只關串流、不殺 tmux。每沙盒同時只允許一條 ws。測試工具 `runner/cmd/pty-probe`（Go，約 40 行）。
 5. **接回雛形**：`npm i @xterm/xterm @xterm/addon-fit`（不用 addon-attach，它的訊框格式跟第 4 條協定不合）。新增 `src/runner.js`，整個模組只在 `import.meta.env.DEV` 啟用，網址與 token 由對話框輸入、存 sessionStorage，不進打包檔、pages.yml 不動。xterm 只建一次，掛在 #app 外的 `#xterm-host`；`detail()` 只留佔位 `<div id="xterm-slot">`，`render()` 結尾 appendChild 搬進去——搬節點不會斷 ws，所以切分頁、搜尋打字不閃。Docker 為真相：載入與每次 Connect 都以 `GET /v1/sandboxes` 重建有 runnerId 的項目。`tick()` 對 runner 沙盒跳過自動降級；Suspend → stop、Resume → start 後重開 ws、Destroy 加 `confirm()`；Files 分頁提示「上傳尚未接到沙盒」。
-6. **煙霧測試與 README**：`scripts/smoke.sh`（curl、jq、node）依序測 400、建立、runsc、exec 五項、pty-probe、stop／start、DELETE，全過印 PASS。在 Anthropic Console 幫這把 key 設每月花費上限（例如 US$50）。README 新增「Runner MVP」一節與目前限制。
+6. **煙霧測試與 README**：`scripts/smoke.sh`（curl、jq、go run）依序測 400、建立、runsc、exec 五項、pty-probe、stop／start、DELETE，全過印 PASS。在 Anthropic Console 幫這把 key 設每月花費上限（例如 US$50）。README 新增「Runner MVP」一節與目前限制。
 
 **技術選型**
 
@@ -116,7 +116,7 @@ M1 之前就有可展示的中間點：第 1 步第 3 週末（開發模式下�
 | KVM 型 Ubuntu 24.04 VPS（4 vCPU / 8 GB） | gVisor 官方支援、不需 /dev/kvm；OpenVZ／LXC 型連 Docker 都跑不起來 |
 | Docker Engine + gVisor runsc（systrap） | 建立、限制、停止、volume 全交給 Docker，Suspend／Resume 就是 stop／start；`runsc install` 一行接上 |
 | Docker named volume 掛 /workspace | 最無聊的持久化，且跟第 5 步的 volume 對得上 |
-| Node 22 + Fastify + dockerode + @fastify/websocket + @fastify/cors（開發期 runner） | 雛形已是 JS，3 週內最快看到真東西；dockerode 的 exec hijack 現成可用；不採 e2b-dev/infra（綁 Nomad + Firecracker）與 agent-sandbox（綁 K8s）。**runner 的正式語言是 Go**（第 4 步起的 cgroup、netns、runsc、Firecracker 程式都是 Go 生態），第 3 步做法第 0 項改寫，估 1 週；docker-adapter 的職責與 API 形狀原樣搬過去 |
+| Go 1.23+ + `net/http` + Docker 官方 Go client + `coder/websocket`（runner，第一版即正式語言） | 依 ADR 決定：第 4 步起的 cgroup、netns、runsc、Firecracker 程式都是 Go 生態，一次選定、不改寫；Docker Go client 的 `ContainerExecAttach` 提供 hijack 串流；不採 e2b-dev/infra（綁 Nomad + Firecracker）與 agent-sandbox（綁 K8s）。Firecracker 的 Go SDK 落後上游，第 8 步若用要逐項比對或直接打 HTTP API |
 | tmux（容器內）+ xterm.js（自己寫 20 行接線） | 斷線畫面不掉；協定不跟 addon-attach 打架；第 3 步換成 ttyd 反代，xterm.js 保留 |
 | key 寫檔 `/run/sbx/anthropic_key` + `apiKeyHelper` | 跟第 3 步同一套，第 6 步才換 proxy；環境變數會被 `env` 與 transcript 帶出去 |
 | `vps-setup.sh` 先檢查 cgroup v2、核心 5.6+、XFS reflink 資料碟 | 為第 4、5 步預留，裝機時做完就不用回頭動正在跑沙盒的主機 |
@@ -132,7 +132,7 @@ M1 之前就有可展示的中間點：第 1 步第 3 週末（開發模式下�
 1. 開通道後 `POST /v1/sandboxes` 帶 memGb:8 → 400；帶 memGb:4 → 回 `{"id":"sbx_xxxxxxxx","status":"Active",…}`。
 2. VPS 上 `docker inspect -f '{{.HostConfig.Runtime}} {{.HostConfig.Init}}' $ID` → `runsc true`；`docker volume ls --filter name=sbx-ws-$ID` 有一筆。
 3. exec `uname -r` 含 4.4.0、`dmesg | head -1` 含 gVisor、`claude --version` 印版本、`claude -p … --dangerously-skip-permissions; cat /workspace/hello.txt` 印 `hi`；`env | grep -c ANTHROPIC` 印 0、`cat /run/sbx/anthropic_key` 以 agent 身分讀得到。
-4. `node scripts/pty-probe.mjs $ID` 輸出含 4.4.0。
+4. `go run ./runner/cmd/pty-probe $ID` 輸出含 4.4.0。
 5. 雛形：Connect runner 後看到 demo 沙盒標示 gVisor · live；Terminal 打 `claude` 直接進畫面；切 Files 再切回不閃；關分頁重開輸出還在。
 6. stop → `{"status":"Suspend"}`；start → Active，`cat /workspace/hello.txt` 仍是 hi；DELETE → 204，`docker ps -a --filter label=sbx.managed=true` 與 volume 都空。
 7. `npm run build && grep -rl '127.0.0.1:8080\|runnerToken' dist/` 找不到任何檔案。
@@ -249,7 +249,7 @@ M1 之前就有可展示的中間點：第 1 步第 3 週末（開發模式下�
 
 **做法**
 
-0. **（A）把第 1 步的 runner 改寫成 Go 並接進控制平面**（1 週）：保留 docker-adapter 的職責與 API 形狀（create／stop／start／destroy／exec／list），語言換成 Go（docker client + gorilla/websocket），API 改綁 `10.8.0.2:9000`（只在 WireGuard 上）；第 1 步的 PTY 端點與 `src/runner.js` 作廢，由做法第 3 項的 ttyd 反代與第 7 項的 `terminal.js` 取代；映像檔 entrypoint 改 ttyd；key 檔案注入沿用。控制平面加 `api/src/runner/http.ts`：create／setTier／destroy 打 `http://10.8.0.2:9000`，`RUNNER_DRIVER=http`；runner 建立／停止失敗回 502 並標 Error；runner 啟動時回報既有沙盒對照 DB（多的標 Lost、少的補建紀錄）。這項做完第 1 步的「runner 未接」就消失。
+0. **（A）把第 1 步的 Go runner 接進控制平面**（2–3 天）：runner 的 API 形狀不變（create／stop／start／destroy／exec／list），改綁 `10.8.0.2:9000`（只在 WireGuard 上），並補一組控制平面對 runner 的契約測試；第 1 步的 PTY 端點與 `src/runner.js` 作廢，由做法第 3 項的 ttyd 反代與第 7 項的 `terminal.js` 取代；映像檔 entrypoint 改 ttyd；key 檔案注入沿用。控制平面加 `api/src/runner/http.ts`：create／setTier／destroy 打 `http://10.8.0.2:9000`，`RUNNER_DRIVER=http`；runner 建立／停止失敗回 502 並標 Error；runner 啟動時回報既有沙盒對照 DB（多的標 Lost、少的補建紀錄）。這項做完第 1 步的「runner 未接」就消失。
 1. **（A）沙盒映像檔**：`apt install -y ttyd tmux git curl`（ttyd＝把任何指令包成網頁終端的小工具）；Node 22 → `npm i -g @openai/codex`；Claude Code 用官方安裝器，`DISABLE_AUTOUPDATER=1`。`~/.tmux.conf` 加 `set -g window-size latest`、`history-limit 50000`。`ENTRYPOINT ["ttyd","-p","7681","-W","tmux","new","-A","-s","main","-c","/workspace"]`；容器用 `--init`。金鑰沿用第 1 步：runner 用 exec 把 key 寫到 `/run/sbx/anthropic_key`（owner agent、0400）。`sbx-agent-setup <agent>` 把所有「會隨版本變」的設定集中一檔：Claude 寫 `~/.claude.json`（hasCompletedOnboarding、theme、projects./workspace.hasTrustDialogAccepted）與 `~/.claude/settings.json` 的 `apiKeyHelper`（`cat /run/sbx/anthropic_key`）；Codex `codex login --with-api-key` + config.toml `trust_level = "trusted"`。`sbx-agent-start <agent> [repo]`：`tmux new -d -s main`，有 repo 則 `git clone --depth 1 $2 . && claude`，用 `tmux send-keys` 送進去（agent 結束或 clone 失敗 shell 還在，看得到錯誤）；建立表單與 CLI 的 repo 欄位從這步起就傳進 create body，這就是「從 repo 建立」的實作，第 5 步只換磁碟不重做。映像檔 CI：起容器、寫假 key、跑 start、睡 10 秒、`tmux capture-pane` 必須出現提示符且不出現 theme／trust 字樣、`env` 不含 ANTHROPIC。
 2. **（A）兩台主機接線**：WireGuard（Linux 內建的點對點加密隧道）VPS 10.8.0.1、VDS 10.8.0.2；runner 只綁 `10.8.0.2:9000`。沙盒之間斷網：`docker network create -o com.docker.network.bridge.enable_icc=false sbx`。網域與反代沿用第 2 步的 Caddy（`console.<網域>` 同源），只加 `/v1/sandboxes/:id/terminal` 走同源 wss；不另開 `api.<網域>`、不加 CORS。
 3. **（A）Runner 終端轉發** `GET /sandboxes/{id}/term`：查沙盒 IP，用 Go 標準庫 `httputil.ReverseProxy` 轉到 `http://<ip>:7681/ws`（Go 1.20 起原生轉 WebSocket）。非 Active 回 409 + `{"state":…}`。這步**不記** last_input_at：ttyd 每 5 秒 ping、resize 都是位元組，看位元組永遠不閒置；閒置留給第 4 步用 tmux 的 `#{session_activity}`。驗：`websocat -b --protocol tty ws://10.8.0.2:9000/sandboxes/<id>/term`。
@@ -263,7 +263,7 @@ M1 之前就有可展示的中間點：第 1 步第 3 週末（開發模式下�
 | 選擇 | 理由 |
 |---|---|
 | ttyd + tmux（沙盒內） | Ubuntu 套件庫就有；省掉自己寫 pty 常駐程式；tmux 也記錄最後一次按鍵時間，第 4 步直接拿來當閒置訊號 |
-| Runner 改寫成 Go（docker client + gorilla/websocket） | 第 4 步起 cgroup、netns、runsc、Firecracker 程式都是 Go 生態，一次換定；第 1 步的 adapter 邊界讓改寫只是搬職責 |
+| 沿用第 1 步的 Go runner，只加 WireGuard 綁定與契約測試 | 語言在 ADR 已定案，這步沒有改寫；adapter 邊界不動 |
 | Docker network icc=false | 一行設定沙盒之間互相連不到 |
 | WireGuard | VPS 與 VDS 不在同一供應商也能安全互通；多台 runner 只是多一個 peer |
 | 沿用第 2 步的 Caddy（同源） | 不另開網域、不加 CORS；WebSocket 免額外處理 |
@@ -276,7 +276,7 @@ M1 之前就有可展示的中間點：第 1 步第 3 週末（開發模式下�
 
 **預估**
 
-1 人 × 5 週：runner 改寫成 Go 並接進控制平面 5 天（做法第 0 項，含 http.ts 與部署腳本）；映像檔與免問答設定 4 天；接線 1 天；runner 轉發 1 天；control-plane 終端入口 2 天；CLI 6 天；發佈與 registry 2 天；瀏覽器終端 3–4 天（第 5 週，可整項延到下一步）。最花時間的是 CLI attach 的邊角（raw mode 還原、Ctrl-C 透傳、視窗大小、重連、409）；其次是 Claude Code／Codex 設定檔格式追蹤，以及 ttyd + tmux 在 gVisor 裡的除錯（要改寫成 creack/pty 常駐程式再 2–3 天，是第 5 週的緩衝來源）。
+1 人 × 5 週：runner 接進控制平面 2–3 天（做法第 0 項，含 http.ts、契約測試與部署腳本），原本預留給改寫的其餘 2–3 天改為 CLI 邊角與 ttyd 除錯的緩衝；映像檔與免問答設定 4 天；接線 1 天；runner 轉發 1 天；control-plane 終端入口 2 天；CLI 6 天；發佈與 registry 2 天；瀏覽器終端 3–4 天（第 5 週，可整項延到下一步）。最花時間的是 CLI attach 的邊角（raw mode 還原、Ctrl-C 透傳、視窗大小、重連、409）；其次是 Claude Code／Codex 設定檔格式追蹤，以及 ttyd + tmux 在 gVisor 裡的除錯（要改寫成 creack/pty 常駐程式再 2–3 天，是第 5 週的緩衝來源）。
 
 **驗收**
 
@@ -295,7 +295,7 @@ M1 之前就有可展示的中間點：第 1 步第 3 週末（開發模式下�
 1. ttyd 在 gVisor 遇到 pty 或 epoll 相容問題：退路是 Go creack/pty 寫約 150 行同協定的常駐程式，已預留 2–3 天。
 2. Claude Code 與 Codex 設定檔格式隨版本變：集中一檔 + CI 檢查，映像檔關自動更新，版本釘在 ghcr tag 對應的 Dockerfile。
 3. API key 仍以檔案放沙盒內，Agent 讀得到：只減輕沒解決，第 6 步換 proxy 注入。
-3a. runner 改寫成 Go 是這步最大的隱藏工作：靠第 1 步的 adapter 邊界與煙霧測試 `smoke.sh` 直接對新 runner 重跑來守；超過 1 週就先讓 Node 版接 http.ts 頂著，改寫延到 B 段。
+3a. 語言已在 ADR 定案為 Go，這步沒有改寫風險；接線用第 1 步的煙霧測試 `smoke.sh` 與新加的契約測試守住 API 形狀。
 4. Suspend → Resume 後沙盒內舊 TCP 全部失效：客戶端一定要主動重連。
 5. ticket 放 query string：只走 wss、60 秒、一次即作廢；Caddy 與 control-plane log 要遮掉。
 6. WireGuard 被供應商防火牆擋 UDP：多半天調 port 或 PersistentKeepalive。
@@ -712,7 +712,7 @@ UFFD 延遲載入（File 後端已是延遲載入；真要做用官方範例 `on
 ## 受邀試用版：工程對照與待決策邊界
 
 
-以下是短版移入的工程對照；其餘詳細步驟尚待同步，#7 保持開啟。兩個產品取捨未定案，本節不替使用者選擇。語言依 [PR #43 的 Runner 語言 ADR](https://github.com/our-sandbox-agent/sandbox-console/pull/43) 決策，不預設 Node，不預排重寫。
+以下是短版移入的工程對照；其餘詳細步驟尚待同步，#7 保持開啟。兩個產品取捨已於 2026-09-21 由創辦人決定：先邀 3 到 5 人受限試用、不設預設運行時限。語言依 [PR #43 的 Runner 語言 ADR](https://github.com/our-sandbox-agent/sandbox-console/pull/43) 決策，不預設 Node，不預排重寫。
 
 | 題目 | 首版方向與驗收 |
 |---|---|
@@ -726,7 +726,7 @@ UFFD 延遲載入（File 後端已是延遲載入；真要做用官方範例 `on
 
 1. Active → Idle：可用無互動、低 CPU 與 Agent 訊號作判斷，但已知忙碌／長任務需保護。CPU 需求、任務重新開始或使用者輸入都應觸發恢復 Active；門檻與反覆切換抑制由測試決定，不先承諾固定 30／60 秒。
 2. Idle → cold Suspend：收到對應目前 session／generation 的有效完成訊號，且沒有仍在執行的受管任務，再開始倒數。新活動取消倒數；單次回覆結束不等於所有背景程序結束。訊號缺失、過期或無法確認任務狀態時，不自動 Suspend。
-3. 最長運行時數是獨立的使用者政策，不是假裝閒置：是否提供平台預設時限仍待決策；不能把 12／24 小時上限當成閒置判斷。若啟用，建立時顯示期限、提前提醒、允許延長，並明示到期冷 Suspend 會中斷執行中工作。時限預設值、額度耗盡及主機緊急處置須在 #7 確認後才能實作。
+3. 最長運行時數是獨立的使用者政策，不是假裝閒置：已決定平台不預設時限，由使用者自行啟用；不能把 12／24 小時上限當成閒置判斷。若啟用，建立時顯示期限、提前提醒、允許延長，並明示到期冷 Suspend 會中斷執行中工作。時限預設值、額度耗盡及主機緊急處置須在 #7 確認後才能實作。
 4. 主機容量、每人配額、磁碟限制與獨立 watchdog 另外控制資源，不靠「長時間一定暫停」替代。每人 running 配額與「同時兩個沙盒」驗收必須一致；未實測前不宣稱 16 GB 一定可跑特定數量。
 
 **資料與憑證保存**
@@ -742,15 +742,14 @@ UFFD 延遲載入（File 後端已是延遲載入；真要做用官方範例 `on
 
 現有 #24 追蹤完整 Alpha，包含 #21／#22 的憑證代理與網路等依賴。這是目前票的範圍，不是使用者已選擇「第一位外部使用者必須等到完整 Alpha」的證據。
 
-- 若選完整 Alpha 後邀請，依原放行清單驗收。
-- 若選先邀 3–5 人受限試用，需另開受限試用放行票，列出隔離、憑證、內網／metadata、容量、備份還原與事故處理的具體措施，以及哪些能力延後、剩餘風險與核准人。必要時調整相依圖，不把 #24 未完成誤當這批試用已通過完整 Alpha。
-- 選擇前不移除現有依賴，也不把風險揭露當成技術措施。兩路的時間差按拆票結果估算，不預先確認多 3–4 週。
+- 已選先邀 3–5 人受限試用：需另開受限試用放行票，列出隔離、憑證、內網／metadata、容量、備份還原與事故處理的具體措施，以及哪些能力延後、剩餘風險與核准人。必要時調整相依圖，不把 #24 未完成誤當這批試用已通過完整 Alpha。
+- 拆票前不移除 #24 的現有依賴，也不把風險揭露當成技術措施；擴大邀請仍以完整 Alpha 為門檻。
 
 原 1 人約 13 週／2 人約 10–11 週僅保留為未驗證目標，不作交期，也不聲稱與原第 20.5 週範圍完全相同。下載、家目錄、憑證與隔離等已前移工作需計入；完成 #8 與選定語言／終端方案後，依各票重估關鍵路徑與緩衝。
 
 **尚待定案與文件同步**
 
-- 語言 ADR：維護負責人、Runner 語言與 CLI 發布方式。
-- 運行時限／資源上限的預設值與超限處置。
+- 受限試用放行票：隔離、憑證、內網／metadata、容量、備份還原、事故處理的具體底線與揭露文字。
+- 使用者自訂運行時限的設定入口、提醒與延長規則；每人配額與主機容量的數字。
 - 資料與憑證保存矩陣，以及 #24 放行證據。
 - plan-detail.md 的三 Agent、暖恢復、回收器、backup、secret 與計費段落須同步修訂；完成前仍屬歷史設計參考，不據此繞過本節與 #7 的必要確認。
