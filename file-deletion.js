@@ -21,7 +21,7 @@ export function createFileDeleter({ getBox, settle, remove, activity }) {
       if (box.status === 'Suspend') throw new Error('沙盒已掛起，請先 Resume 再刪除。');
       if (target.key !== target.box + ':' + target.path) throw new Error('檔案路徑不一致，請重新載入。');
       await remove(target.key);
-      activity(box);
+      activity(box, target);
     } finally {
       pending.delete(target.key);
     }
