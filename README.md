@@ -41,6 +41,8 @@ npm run dev -- --port 4173
 
 8 步實作計劃：短版 [docs/plan.md](docs/plan.md)，詳細版 [docs/plan-detail.md](docs/plan-detail.md)。
 
+語言決策：[Runner 語言 ADR（Proposed）](docs/adr/runner-language.md)。
+
 ## 資料與限制
 
 沙盒與紀錄儲存在 localStorage，檔案儲存在 IndexedDB。同一 origin／瀏覽器重整後保留；清除網站資料會移除。沒有跨裝置同步。避免上傳敏感檔案。計時只累計頁面開啟期間；多分頁同步、離線計費與後端權威時鐘尚未實作。初始三個沙盒與既有時數是展示資料，費率不是商業報價。資料夾請用 Upload folder 按鈕選取；拖放區支援一般檔案。不同路徑同名檔案可共存，相同完整路徑再次上傳會覆寫。

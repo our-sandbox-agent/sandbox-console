@@ -1,6 +1,6 @@
 # 實作計劃：詳細版（2026-09）
 
-> 語言配置正在收斂：見 [語言配置提案](language-proposal.md)。第 1 步暫時 Node Runner／第 3 步 Go 重寫不再作為必交路線；定案前不依這些段落開工，套件與估時待同時修訂。
+> 語言配置正在收斂：見 [Runner 語言 ADR（Proposed）](adr/runner-language.md)。第 1 步暫時 Node Runner／第 3 步 Go 重寫不再作為必交路線；定案前不依這些段落開工，套件與估時待同時修訂。
 
 > 這是給工程師看的完整版。創辦人先看短版 [plan.md](plan.md)。
 
