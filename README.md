@@ -15,7 +15,7 @@ npm run dev -- --port 4173
 
 開啟 http://localhost:4173/sandbox-console/ 。`npm run build` 產生靜態頁面於 `dist/`。
 
-`npm test` 執行狀態計時測試：重新整理接續、關頁不計時、手動 Idle 倒數、延遲回呼跨越多個狀態，以及切換前的時間結算。
+`npm test` 執行狀態計時與檔案刪除測試：重新整理接續、關頁不計時、手動 Idle 倒數、延遲回呼跨越多個狀態、切換前的時間結算，以及檔案隔離、刪除交易回滾與重試、重複提交和 Suspend 保護。
 
 倒數和累計秒數會保存；重新整理接續剩餘時間，關頁期間暫停。手動 Set idle 後，從當下開始完整的 Idle → Suspend 倒數。頁面仍開著但背景計時器延遲時，恢復後會把時間分配到各狀態。正常離頁會立即保存；瀏覽器異常終止時，最多可能遺失最後一次定期保存後約 5 秒的前景進度（背景計時器遭節流時可能更久）。
 
@@ -26,6 +26,7 @@ npm run dev -- --port 4173
 - Active → Idle 或 Suspend；Idle / Suspend → Active。
 - 模擬 terminal：help、pwd、ls、status、clear、sandbox claude / codex / harness。其他輸入不執行。
 - 個別沙盒的檔案及資料夾上傳、相對路徑保留、原始內容下載。每檔上限 10 MB。
+- Files 與詳情 Files 分頁可單檔刪除：確認完整路徑後永久刪除，取消不更動檔案或活動時間；沒有垃圾桶。Suspend 期間不能刪除，交易失敗可重試。
 - 三段示意費率與按狀態累計的 session 費用，4 vCPU 為 2 vCPU 示意費率的兩倍。
 - 自動降級：無活動 N 分鐘 Active → Idle，再 M 分鐘 → Suspend，門檻可在 Usage 頁調整，詳情頁顯示倒數。
 - Snapshot / Fork：對沙盒建立快照，從快照分支出新沙盒（含檔案）。
