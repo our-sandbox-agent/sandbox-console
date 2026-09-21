@@ -10,3 +10,8 @@
 .policy,.compare{margin:22px 0;padding:18px 20px;border:1px solid var(--border);border-radius:14px;background:#fff}.policy{display:flex;flex-wrap:wrap;gap:18px;align-items:center}.policy>div,.compare>div{flex:1 1 260px;display:flex;flex-direction:column;gap:4px}.policy small,.compare small{color:var(--muted);line-height:1.5}.policy label{display:flex;align-items:center;gap:8px;font-size:13px}.policy select{padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:#fff}
 .compare table{width:100%;margin-top:14px;border-collapse:collapse;font-size:13px}.compare th{text-align:left;font-size:11px;letter-spacing:.06em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--border)}.compare td{padding:9px 8px;border-bottom:1px solid var(--border)}.compare tr.chosen td{background:#f1f9e8;font-weight:600}
 #create-dialog label small{color:var(--muted);font-weight:400}
+.delete-file{color:#9b3d32}
+#delete-file-path{display:block;overflow-wrap:anywhere;padding:12px;background:#f3f5f0;border-radius:5px}
+#delete-file-error{color:#9b3d32;min-height:1em}
+#delete-file-confirm{background:#913f34}
+#delete-file-dialog .actions{justify-content:flex-end}

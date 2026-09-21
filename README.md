@@ -26,6 +26,7 @@ npm run dev -- --port 4173
 - Active → Idle 或 Suspend；Idle / Suspend → Active。
 - 模擬 terminal：help、pwd、ls、status、clear、sandbox claude / codex / harness。其他輸入不執行。
 - 個別沙盒的檔案及資料夾上傳、相對路徑保留、原始內容下載。每檔上限 10 MB。
+- Files 與詳情 Files 分頁可單檔刪除：確認完整路徑後永久刪除，取消不更動檔案或活動時間；沒有垃圾桶。Suspend 期間不能刪除，交易失敗可重試。
 - 三段示意費率與按狀態累計的 session 費用，4 vCPU 為 2 vCPU 示意費率的兩倍。
 - 自動降級：無活動 N 分鐘 Active → Idle，再 M 分鐘 → Suspend，門檻可在 Usage 頁調整，詳情頁顯示倒數。
 - Snapshot / Fork：對沙盒建立快照，從快照分支出新沙盒（含檔案）。
