@@ -57,3 +57,12 @@
 - E2B billing / persistence docs、Daytona pricing、Modal pricing & snapshots、Fly Sprites、Cloudflare Sandbox GA blog、Vercel Sandbox pricing、Blaxel、Runloop、Morph Infinibranch、Together Code Sandbox
 - Firecracker snapshot-support.md、UFFD docs；gVisor checkpoint/restore docs；Modal mem-snapshots blog
 - fly.io/learn/ai-sandbox-pricing、bex.co 比較文、LogRocket 平台比較、HN Sprites 討論
+
+## 6. 補充（2026-09-22）：Boat、Agent 37、Archal 與瀏覽器 IDE
+
+- **Boat（boat.dev）**：持久 Linux VM、CLI 與 SDK 為主、串流桌面；專案靠 Environments 設定自動 git clone；按秒計、停止免費、預付方案；每分鐘自動磁碟快照，「快照存不下來就拒絕停止」；預設 TTL 從建立起算。
+- **Agent 37 Cloud**：API-first 的 agent 託管，網頁終端加檔案瀏覽器加遠端桌面；預付錢包按分扣，睡眠只算磁碟，冷儲存更低費率；建立前錢包需有一天的運行費；宣稱 gVisor。
+- **Archal**：模擬第三方 API 的有狀態測試環境，不是計算沙盒，不對標。
+- **共通點**：都沒做瀏覽器版 VS Code；都以 git clone 為主入口；都預付額度、免卡試用；沒有人在 MVP 接 Stripe 訂閱。
+- **我們有而他們沒有**：依任務完成的自動降級、無預設時限、放行證據、帶不確定區間的帳本、冷恢復依 session 接回對話。
+- **瀏覽器 IDE 選項**：只有 code-server 可行（MIT、Open VSX、子路徑、驗證交外層、非 root 映像、月更）；微軟 VS Code Server 授權禁止代管；OpenVSCode Server 自 2026-02 停更；Theia 瀏覽器版實驗性；Coder 是整套平台。Claude Code 擴充在 Open VSX，官方建議裝不上就在整合終端跑 CLI。代價：每沙盒多數百 MB 到 1 GB、代理層與 Idle 訊號要改、約 1.5 到 2.5 人週一次性工作。gVisor #14761（非 root 開不了 PTY）要先在 #8 釐清。決定見 plan.md「已決定的方向」與 #52。

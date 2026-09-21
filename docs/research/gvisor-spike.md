@@ -37,7 +37,7 @@ runsc 安裝／Docker daemon 修改需主機維護者安排；重啟 daemon 可�
 | E03 repo | 公開小型 fixture repo 固定 commit，`git clone` 後 `git rev-parse HEAD`，工作檔 hash | 正確 commit，TLS/DNS 正常；不帶私人 repo/token |
 | E04 package | fixture 含固定 package-lock，跑 `npm ci --ignore-scripts`；再跑已檢視 fixture 的測試 | install 與測試 exit 0；記 network error 和耗時，不把失敗省略 |
 | E05 Claude | tmpfs 短期注入專用 key，固定版本跑下方 marker 任務，保存輸出與 marker hash | Claude 真的寫出 marker 且 exit 0；不是人工預建 marker。結束後 secret 清除，log 無 key |
-| E06 PTY | 實際互動 `tmux new -s spike`，啟動有進度的短工作；resize、Ctrl-C、detach、客戶端斷線再 attach | stty 尺寸匹配；signal 正確；未停止 runtime 時 PID/進度保留，無黑屏或混流 |
+| E06 PTY | 實際互動 `tmux new -s spike`，啟動有進度的短工作；resize、Ctrl-C、detach、客戶端斷線再 attach | stty 尺寸匹配；signal 正確；未停止 runtime 時 PID/進度保留，無黑屏或混流；另驗 google/gvisor#14761：`docker run --rm --user 1000:1000 <diag> sh -c 'exec 3<>/dev/ptmx'` 在 runsc 必須成功，失敗則記錄版本並提出換版／等修正方案，不以 root 跑 |
 | E07 CPU | 專用 disposable instance 設 0.5 CPU，容器內單 worker 忙迴圈 20 秒；宿主讀實際 cgroup cpu.stat 差值並與 wall time 比較 | 實測使用量／節流符合設定及事先記錄容差；不能只看 inspect。過大環境抖動標重測 |
 | E08 memory | 先確認限額生效，再在 disposable instance 逐批配置超過限額的記憶體；記宿主 memory.current/events 與容器結束原因 | 分配失敗／OOM 限於該容器，host 可用量保留；不關 OOM killer、不無限配置 |
 | E09 PID | 設小額 PID cap；受 timeout 控制逐一建立 child，最多嘗試 cap+16；完整 wait/cleanup，宿主讀 pids.current/events | 達限制後拒絕新程序，host 無洩漏；gVisor guest PID 與宿主 task 若不同須揭露，不能將宿主 cap 當 guest cap |

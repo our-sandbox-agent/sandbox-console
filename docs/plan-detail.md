@@ -23,6 +23,7 @@
 - #7 → #8 與 #9；#46 與 #7 契約對齊。
 - #8 go 才做 #10；#8 go 且 #9 完成才做 #11。映像檔和 Runner 可並行，但不宣稱 gVisor 之外沒有技術未知。
 - #12 在 #10/#11 之後；#13 依映像檔／Runner 接 terminal；之後 #14 CLI、#15 real console。
+- #52 IDE 模式 spike 在 #8、#10、#11、#13 之後，M2 timebox；不阻擋受限試用。
 - #16 起的授權、#17 operation、#18 watchdog、#19 policy、#20 files、#21 secrets、#22 network、#23 operations 各自保留功能驗收；受限試用只可對其中必要子範圍填證據，不能把整票提前關閉。
 - #24 仍是完整 Alpha，保留其全部依賴。#46 只定義受限試用規格，完成後另按清單執行實際放行，不解除 #24。
 - #9 的事件契約在第一個真 Runner 使用；#25–#30 的持久帳本、計價、Stripe、對帳和正式放行逐步接上。
@@ -80,7 +81,9 @@ workspace 與 home 分開；home 只保存已選定非敏感設定／對話，ru
 
 Console real API 模式顯示 pending operation、Lost／Error 及錯誤處理；demo localStorage 與真服務明確分隔。#39/#41 暫緩，等 real API 接回再評估是否還需要同一套 UI。
 
-cp 下載驗租戶／沙盒／路徑，防 symlink 與目的地解壓逃逸；Suspend 可只讀，不改寫或刪除檔案；檔案寫入恢復後進行。安全路徑實作按選定 Go 版本官方 API 確認，不猜行數或把未驗 API 行為當保證。大檔續傳與檔案 snapshot 留後續。
+cp 下載驗租戶／沙盒／路徑，防 symlink 與目的地解壓逃逸；Suspend 可只讀，不改寫或刪除檔案；檔案寫入恢復後進行。安全路徑實作按選定 Go 版本官方 API 確認，不猜行數或把未驗 API 行為當保證。資料夾上傳簡單版進受限試用（#20 補充：打包直傳 volume、固定大小上限、忽略清單、UI 顯示被排除檔案）；大檔續傳與檔案 snapshot 留後續。
+
+IDE 模式（#52）若通過 spike，是每沙盒可選附加：code-server 與 Agent 同容器同 home、經 `console.<domain>/s/<id>/ide/` 子路徑代理、整合終端只是 tmux 的另一個客戶端；Idle 訊號以使用者輸入為準並排除 IDE 程序（#19）。
 
 ### 登入、狀態與營運（#16–#23）
 
