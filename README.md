@@ -41,7 +41,7 @@ npm run dev -- --port 4173
 
 8 步實作計劃：短版 [docs/plan.md](docs/plan.md)，詳細版 [docs/plan-detail.md](docs/plan-detail.md)。
 
-語言決策：[Runner 語言 ADR（Proposed）](docs/adr/runner-language.md)。
+語言決策：[Runner 語言 ADR（Accepted：Runner 與 CLI 用 Go）](docs/adr/runner-language.md)。
 
 ## 資料與限制
 
