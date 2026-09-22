@@ -18,3 +18,4 @@
 #delete-file-dialog p{color:#536348}
 #delete-file-dialog #delete-file-error{color:#9b3d32}
 #delete-file-dialog .actions button{font-size:12px;min-height:44px;padding:12px 17px}
+#upload-overwrite-dialog p{color:#536348}#upload-overwrite-dialog ul{max-height:170px;overflow:auto;margin:8px 0;padding:10px 14px;background:#f3f5f0;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#31402c;list-style:none}#upload-overwrite-dialog li{padding:2px 0;overflow-wrap:anywhere}#upload-overwrite-dialog .actions{justify-content:flex-end;flex-wrap:wrap}#upload-overwrite-dialog .actions button{font-size:12px;min-height:44px;padding:12px 17px}#overwrite-confirm{background:#913f34}#overwrite-changed{color:#8a5a20;min-height:1em}

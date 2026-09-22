@@ -1,6 +1,7 @@
 import './style.css';
 import './brand.css';
 import { createFileDeleter, deleteStoredFile } from './file-deletion.js';
+import { planUpload, findConflicts, writeFiles, createUploadWriter } from './file-upload.js';
 import { normalizePolicy, restoreClock, deadline, advance, setState, recordActivity } from './lifecycle.js';
 const icons={box:'<path d="m12 3 9 5v9l-9 5-9-5V8zm0 0v10m-9-5 9 5 9-5m-9 5v9"/>',grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',terminal:'<path d="m5 6 6 6-6 6m9 0h6"/>',folder:'<path d="M3 7V5h7l2 3h9v12H3z"/>',chart:'<path d="M4 3v18h17M8 16v-5m5 5V7m5 9V4"/>',book:'<path d="M4 4h7l1 2 1-2h7v16h-7l-1 1-1-1H4zM12 6v15"/>',plus:'<path d="M12 5v14M5 12h14"/>',search:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',upload:'<path d="M12 16V3m-5 5 5-5 5 5M3 15v6h18v-6"/>',copy:'<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M15 8V3H3v12h5"/>',play:'<path d="m8 4 12 8-12 8z"/>',pause:'<path d="M8 4v16M16 4v16"/>',arrow:'<path d="m8 5 7 7-7 7"/>',check:'<path d="m5 12 4 4L19 6"/>'};
 const icon=(n)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[n]||icons.box}</svg>`;
@@ -28,6 +29,7 @@ const badge=s=>`<span class="badge ${s.toLowerCase()}"><i></i>${s}</span>`;
 function toast(t){document.querySelector('#toast').textContent=t;document.querySelector('#toast').classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>document.querySelector('#toast').classList.remove('show'),3200);}
 const dbPromise=new Promise((resolve,reject)=>{const req=indexedDB.open('sandbox-files',1);req.onupgradeneeded=()=>req.result.createObjectStore('files',{keyPath:'key'});req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});
 async function fileOp(mode,fn){const db=await dbPromise;return new Promise((resolve,reject)=>{const tx=db.transaction('files',mode);const request=fn(tx.objectStore('files'));tx.oncomplete=()=>resolve(request?.result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}
+const currentKeys=()=>fileOp('readonly',s=>s.getAllKeys());
 async function readFiles(){try{files=await fileOp('readonly',s=>s.getAll());fileError='';}catch{fileError='無法開啟本機檔案儲存空間。';}render();}
 function render(){const b=current();document.querySelector('#app').innerHTML=`
 <aside><a class="brand" href="#" aria-label="NexSpace 星際工作站首頁">${brandMark}<span class="brand-copy"><b>NexSpace</b><small>星際工作站</small></span></a><div class="workspace"><span class="workspace-mark">O</span><span>Our workspace<small>Personal workspace</small></span><span class="chevron">⌄</span></div><div class="nav-label">WORKSPACE</div><nav>${[['sandboxes','grid','Sandboxes'],['files','folder','Files'],['usage','chart','Usage']].map(([v,i,t])=>`<button data-view="${v}" class="${view===v?'selected':''}">${icon(i)}${t}${v==='sandboxes'?`<span class="nav-count">${boxes.length}</span>`:''}</button>`).join('')}</nav><div class="aside-bottom"><div class="demo-card"><span class="small-tag">NEXSPACE / PREVIEW</span><strong>下一個想法，準備啟航。</strong><p>探索 Agent 的獨立工作空間。</p><div><i></i> 模擬環境 · 無雲端費用</div></div><button class="docs" data-view="guide">${icon('book')}Quick start<span>↗</span></button><div class="profile"><span class="avatar">O</span><div>NexSpace<small>Developer preview</small></div><span class="version">v0.1</span></div></div></aside>
@@ -47,7 +49,7 @@ function usage(){return `<div class="page-title"><div><div class="eyebrow">PAY F
 function guide(){return `<div class="page-title"><div><div class="eyebrow">FROM ZERO TO WORKSPACE.</div><h1>Quick start<span class="title-dot">.</span></h1><p>先體驗流程，再連接真正的執行環境。</p></div></div><div class="guide"><section><span>01</span><h2>Choose your agent</h2><p>在 Sandboxes 選擇 Claude、Codex 或 Harness，點選 Try in console 建立模擬工作空間。</p><code>sandbox claude</code></section><section><span>02</span><h2>Bring your files</h2><p>上傳檔案或整個資料夾，保留相對路徑；下載可取回原始檔案。資料只保存在目前瀏覽器。</p></section><section><span>03</span><h2>Pause. Pick up. Continue.</h2><p>Active 執行工作；Idle 保持就緒；Suspend 暫停並保留檔案。Resume 後繼續操作。</p></section></div><div class="notice">目前沒有可安裝的 CLI，也尚未接入 Claude / Codex API、gVisor 或 Firecracker。終端支援 help、ls、pwd、status、clear、sandbox claude / codex / harness；其他命令不會在主機執行。</div>`;}
 function create(name,a,cpu,repo=''){tick(false);if(boxes.some(b=>b.name===name)){toast('這個名稱已經存在，請換一個名稱。');return false;}const b={id:'sbx_'+crypto.randomUUID().slice(0,8),name,agent:a,cpu:Number(cpu),status:'Active',created:Date.now(),lastActivity:Date.now(),repo,snapshots:[],seconds:{Active:0,Idle:0,Suspend:0},logs:['Sandbox initialized (demo) · Ubuntu 24.04','Workspace mounted at /workspace',...(repo?['Cloned '+repo+' into /workspace (demo)']:[]),a+' session ready. Waiting for a task.']};restoreClock(b,Date.now());boxes.unshift(b);selected=b.id;view='sandboxes';filter='All';query='';tab='terminal';save();render();toast('Sandbox 已建立 · 模擬環境');return true;}
 function bind(){bindFileDeletion();document.querySelectorAll('[data-view]').forEach(el=>el.onclick=()=>{view=el.dataset.view;render();});document.querySelector('.brand').onclick=e=>{e.preventDefault();view='sandboxes';render();};document.querySelectorAll('[data-create]').forEach(el=>el.onclick=()=>document.querySelector('#create-dialog').showModal());document.querySelectorAll('[data-agent]').forEach(el=>el.onclick=()=>{agent=el.dataset.agent;render();});document.querySelector('[data-copy]')?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText('sandbox '+agent.toLowerCase());toast('已複製啟動指令（CLI 尚未實作）');}catch{toast('無法存取剪貼簿，請選取指令複製。');}});document.querySelector('[data-launch]')?.addEventListener('click',()=>create(agent.toLowerCase()+'-workspace-'+Date.now().toString().slice(-5),agent,2));document.querySelectorAll('[data-filter]').forEach(el=>el.onclick=()=>{filter=el.dataset.filter;render();});document.querySelector('#search')?.addEventListener('input',e=>{const pos=e.target.selectionStart;query=e.target.value;render();const input=document.querySelector('#search');input.focus();input.setSelectionRange(pos,pos);});document.querySelectorAll('[data-select]').forEach(el=>el.onclick=()=>{selected=el.dataset.select;render();});document.querySelectorAll('[data-tab]').forEach(el=>el.onclick=()=>{tab=el.dataset.tab;render();});document.querySelectorAll('[data-state]').forEach(el=>el.onclick=()=>{const b=current();setState(b,el.dataset.state,Date.now(),policy);b.logs.push('State changed to '+el.dataset.state+' (manual, demo)');save();render();});document.querySelector('[data-snapshot]')?.addEventListener('click',()=>snapshot(current()));document.querySelectorAll('[data-fork]').forEach(el=>el.onclick=()=>fork(current(),el.dataset.fork));document.querySelector('#idle-after')?.addEventListener('change',e=>{tick(false);policy.idleAfter=Number(e.target.value);savePolicy();save();render();});document.querySelector('#suspend-after')?.addEventListener('change',e=>{tick(false);policy.suspendAfter=Number(e.target.value);savePolicy();save();render();});document.querySelector('#terminal-form')?.addEventListener('submit',e=>{e.preventDefault();const command=document.querySelector('#command-input').value.trim();if(!command)return;tick(false);const b=current();if(b.status==='Suspend')return;touch(b);if(b.status==='Idle'){setState(b,'Active',Date.now(),policy);b.logs.push('Resumed to Active on input (demo)');}b.logs.push('$ '+command);const parts=command.split(/\s+/);if(command==='clear')b.logs=[];else if(command==='help')b.logs.push('Available: help, ls, pwd, status, clear, git status, sandbox <claude|codex|harness>, sandbox ls, sandbox connect <id>, sandbox suspend, sandbox snapshot [name]');else if(command==='git status')b.logs.push(b.repo?'On branch main · '+files.filter(f=>f.box===b.id).length+' untracked file(s) (demo)':'fatal: not a git repository (create the sandbox with a repo URL)');else if(command==='sandbox ls')boxes.forEach(x=>b.logs.push(x.id+'  '+x.status.padEnd(8)+x.agent.padEnd(8)+x.name));else if(command==='sandbox suspend'){setState(b,'Suspend',Date.now(),policy);b.logs.push('Suspended, workspace preserved (demo)');}else if(parts[0]==='sandbox'&&parts[1]==='snapshot'){snapshot(b,parts.slice(2).join(' '));return;}else if(parts[0]==='sandbox'&&parts[1]==='connect'){const t=boxes.find(x=>x.id===parts[2]);if(t){selected=t.id;if(t.status!=='Active'){setState(t,'Active',Date.now(),policy);t.logs.push('Resumed by connect (demo)');}}else b.logs.push('No sandbox with id '+parts[2]);}else if(command==='pwd')b.logs.push('/workspace');else if(command==='status')b.logs.push(b.status+' · '+b.cpu+' vCPU · '+b.cpu*2+' GB · demo');else if(command==='ls')b.logs.push(files.filter(f=>f.box===b.id).map(f=>f.path).join('  ')||'(workspace is empty)');else if(parts[0]==='sandbox'&&parts.length===2&&['claude','codex','harness'].includes(parts[1])){b.agent=parts[1][0].toUpperCase()+parts[1].slice(1);b.status='Active';b.logs.push(b.agent+' session ready (simulation).');}else b.logs.push('Demo only: command not executed. Type help for available commands.');save();render();document.querySelector('#command-input')?.focus();});document.querySelector('#file-box')?.addEventListener('change',e=>{selected=e.target.value;render();});document.querySelectorAll('[data-upload]').forEach(el=>el.onclick=()=>document.querySelector('#'+el.dataset.upload+'-input').click());['file','folder'].forEach(t=>document.querySelector('#'+t+'-input')?.addEventListener('change',e=>upload([...e.target.files])));const drop=document.querySelector('#drop-zone');if(drop){drop.ondragover=e=>{e.preventDefault();drop.classList.add('over');};drop.ondragleave=()=>drop.classList.remove('over');drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');upload([...e.dataTransfer.files]);};}document.querySelectorAll('[data-download]').forEach(el=>el.onclick=()=>{const f=files.find(f=>f.key===el.dataset.download);const url=URL.createObjectURL(f.blob);const a=document.createElement('a');a.href=url;a.download=f.path.split('/').pop();a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});}
-async function upload(items){tick(false);const b=current();if(b.status==='Suspend'){toast('請先 Resume 沙盒。');return;}if(!items.length){toast('請使用 Upload folder 選取資料夾。');return;}let added=0;try{for(const f of items){if(f.size>10*1024*1024)throw new Error('單一檔案不能超過 10 MB');touch(b);const path=f.webkitRelativePath||f.name;await fileOp('readwrite',s=>s.put({key:b.id+':'+path,box:b.id,path,blob:f}));added++;}b.logs.push('Added '+added+' file(s) to /workspace (browser-local).');save();toast('已儲存 '+added+' 個檔案至本機工作空間');}catch(e){toast('已儲存 '+added+' 個；'+(e.message||'儲存失敗'));}await readFiles();}
+async function upload(items){tick(false);const b=current();if(b.status==='Suspend'){toast('請先 Resume 沙盒。');return;}if(!items.length){toast('請使用 Upload folder 選取資料夾。');return;}let entries;try{entries=planUpload(b.id,items);}catch(e){toast(e.message||'選取內容無效。');return;}const conflicts=findConflicts(entries,await currentKeys());if(conflicts.length)askOverwrite(b,entries,conflicts);else await performUpload(b.id,entries,'skip',new Set());}
 function tick(redraw=true){const now=Date.now();let changed=false;boxes.forEach(b=>{if(advance(b,now,policy))changed=true;});if(changed&&redraw){save();render();}}
 function snapshot(b,name){name=name||'snap-'+(b.snapshots.length+1);b.snapshots.push({id:crypto.randomUUID().slice(0,8),name,at:Date.now()});b.logs.push('Snapshot "'+name+'" created · memory + /workspace (demo)');touch(b);save();render();toast('已建立快照 '+name+'（模擬）');}
 async function fork(b,sid){const sn=b.snapshots.find(s=>s.id===sid);if(!sn)return;const name=b.name+'-'+sn.name;if(!create(name,b.agent,b.cpu,b.repo))return;const nb=boxes[0];nb.logs.splice(-1,0,'Forked from '+b.name+' @ '+sn.name+' (demo)');try{for(const f of files.filter(f=>f.box===b.id))await fileOp('readwrite',s=>s.put({key:nb.id+':'+f.path,box:nb.id,path:f.path,blob:f.blob}));}catch{}await readFiles();}
@@ -114,5 +116,68 @@ deleteConfirm.onclick = async () => {
 };
 
 window.addEventListener('pagehide',()=>{tick(false);save();});
+
+const overwriteDialog = document.createElement('dialog');
+overwriteDialog.id = 'upload-overwrite-dialog';
+overwriteDialog.setAttribute('aria-labelledby', 'overwrite-title');
+overwriteDialog.innerHTML = `<h2 id="overwrite-title">覆寫已存在的檔案？</h2>
+<p>選取內容中有 <b id="overwrite-count">0</b> 個檔案與此工作空間現有檔案的完整路徑相同。</p>
+<p id="overwrite-workspace"></p><ul id="overwrite-paths"></ul>
+<p id="overwrite-changed" role="alert"></p>
+<div class="actions"><button class="subtle" id="overwrite-cancel" autofocus>取消整批</button><button class="subtle" id="overwrite-skip">略過衝突檔案</button><button class="primary" id="overwrite-confirm">覆寫衝突檔案</button></div>`;
+document.body.append(overwriteDialog);
+let overwriteCtx = null, overwritePending = false;
+const overwriteChanged = overwriteDialog.querySelector('#overwrite-changed');
+const overwriteCancel = overwriteDialog.querySelector('#overwrite-cancel');
+const overwriteSkip = overwriteDialog.querySelector('#overwrite-skip');
+const overwriteConfirm = overwriteDialog.querySelector('#overwrite-confirm');
+const uploadFiles = createUploadWriter({
+  getBox: id => boxes.find(b => b.id === id),
+  settle: () => tick(false),
+  currentKeys,
+  write: async entries => writeFiles(await dbPromise, entries),
+  activity: (b, c) => { touch(b); b.logs.push(c.overwritten ? 'Added '+c.written+' file(s), overwrote '+c.overwritten+' existing (browser-local).' : 'Added '+c.written+' file(s) to /workspace (browser-local).'); save(); }
+});
+function showConflicts(list, changed) {
+  overwriteCtx.confirmedKeys = new Set(list.map(e => e.key));
+  overwriteDialog.querySelector('#overwrite-paths').innerHTML = list.map(e => `<li>${esc(e.path)}</li>`).join('');
+  overwriteDialog.querySelector('#overwrite-count').textContent = list.length;
+  overwriteChanged.textContent = changed ? '等待期間目標已改變，以上為最新衝突清單，請重新確認。' : '';
+}
+function askOverwrite(b, entries, conflicts) {
+  overwriteCtx = { boxId: b.id, entries, confirmedKeys: new Set() };
+  overwriteDialog.querySelector('#overwrite-workspace').textContent = b.name;
+  showConflicts(conflicts, false);
+  overwriteDialog.showModal();
+}
+async function performUpload(boxId, entries, mode, confirmedKeys) {
+  try {
+    const r = await uploadFiles({ boxId, entries, mode, confirmedKeys });
+    if (r.status === 'reconfirm') { showConflicts(r.conflicts, true); return; }
+    if (!r.written && r.skipped) toast('已略過 '+r.skipped+' 個衝突檔案，未寫入任何檔案。');
+    else if (r.overwritten) toast('已儲存 '+r.written+' 個檔案（覆寫 '+r.overwritten+' 個既有檔案）');
+    else if (r.skipped) toast('已儲存 '+r.written+' 個；略過 '+r.skipped+' 個衝突檔案。');
+    else toast('已儲存 '+r.written+' 個檔案至本機工作空間');
+    if (overwriteDialog.open) overwriteDialog.close();
+    await readFiles();
+  } catch (e) {
+    if (overwriteDialog.open) overwriteDialog.close();
+    toast(e.message || '上傳失敗，請重試。');
+    await readFiles();
+  }
+}
+overwriteCancel.onclick = () => overwriteDialog.close();
+overwriteDialog.addEventListener('cancel', event => { if (overwritePending) event.preventDefault(); });
+async function chooseOverwrite(mode) {
+  if (!overwriteCtx || overwritePending) return;
+  overwritePending = true;
+  overwriteConfirm.disabled = overwriteSkip.disabled = overwriteCancel.disabled = true;
+  overwriteConfirm.textContent = '寫入中…';
+  overwriteChanged.textContent = '';
+  try { await performUpload(overwriteCtx.boxId, overwriteCtx.entries, mode, overwriteCtx.confirmedKeys); }
+  finally { overwritePending = false; overwriteConfirm.disabled = overwriteSkip.disabled = overwriteCancel.disabled = false; overwriteConfirm.textContent = '覆寫衝突檔案'; }
+}
+overwriteSkip.onclick = () => chooseOverwrite('skip');
+overwriteConfirm.onclick = () => chooseOverwrite('overwrite');
 window.addEventListener('pageshow',e=>{if(e.persisted){boxes.forEach(b=>restoreClock(b,Date.now()));render();}});
 render();readFiles();
