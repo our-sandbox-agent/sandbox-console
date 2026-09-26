@@ -1,0 +1,57 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.38kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:22-bookworm-slim@sha256:43ac6c60b8f89723f746e8a92ce91abd5017e627ce1ddfe4238355d3a30b772c
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [1/6] FROM docker.io/library/node:22-bookworm-slim@sha256:43ac6c60b8f89723f746e8a92ce91abd5017e627ce1ddfe4238355d3a30b772c
+#4 resolve docker.io/library/node:22-bookworm-slim@sha256:43ac6c60b8f89723f746e8a92ce91abd5017e627ce1ddfe4238355d3a30b772c 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 71B done
+#5 DONE 0.0s
+
+#6 [3/6] WORKDIR /opt/claude
+#6 CACHED
+
+#7 [2/6] RUN rm -f /etc/apt/sources.list.d/debian.sources &&     printf '%s\n'       'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/20260926T000000Z bookworm main'       'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian-security/20260926T000000Z bookworm-security main'       > /etc/apt/sources.list &&     apt-get update && apt-get install -y --no-install-recommends       ca-certificates git tmux python3 procps &&     dpkg-query -W > /usr/local/share/diagnostic-dpkg.txt &&     rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [4/6] COPY package.json package-lock.json ./
+#8 CACHED
+
+#9 [5/6] RUN npm ci --ignore-scripts --omit=dev &&     test -x /opt/claude/node_modules/@anthropic-ai/claude-code-linux-x64/claude &&     ln -s /opt/claude/node_modules/@anthropic-ai/claude-code-linux-x64/claude /usr/local/bin/claude &&     npm cache clean --force &&     mkdir -p /workspace && chown node:node /workspace
+#9 1.995 
+#9 1.995 added 2 packages, and audited 3 packages in 2s
+#9 1.995 
+#9 1.995 found 0 vulnerabilities
+#9 1.996 npm notice
+#9 1.996 npm notice New major version of npm available! 10.9.9 -> 12.1.0
+#9 1.996 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.1.0
+#9 1.996 npm notice To update run: npm install -g npm@12.1.0
+#9 1.996 npm notice
+#9 2.055 npm warn using --force Recommended protections disabled.
+#9 DONE 2.4s
+
+#10 [6/6] WORKDIR /workspace
+#10 DONE 0.1s
+
+#11 exporting to image
+#11 exporting layers
+#11 exporting layers 4.8s done
+#11 exporting manifest sha256:f18ef4f37e8048f9c0003943fe3846a617ce16799998ba1b78fdd9319c4f16b2 0.0s done
+#11 exporting config sha256:86c4aeddbeb9822b68b49f15488d0bffad37d81858908bcba502b8d494090ff1 0.0s done
+#11 exporting attestation manifest sha256:38db1120a72cb5ddba3fb30d060c89f30acc56812e23907f433e2f5b4a720205 0.0s done
+#11 exporting manifest list sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf 0.0s done
+#11 naming to docker.io/library/spike-diagnostic:20260927 done
+#11 unpacking to docker.io/library/spike-diagnostic:20260927
+#11 unpacking to docker.io/library/spike-diagnostic:20260927 0.8s done
+#11 DONE 5.7s

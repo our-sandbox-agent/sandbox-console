@@ -1,0 +1,50 @@
+[
+  {
+    "at": 1585.43583381,
+    "host_available_mib": 7231,
+    "cpu.max": "100000 100000",
+    "cpu.stat": "usage_usec 42599\nuser_usec 18933\nsystem_usec 23666\ncore_sched.force_idle_usec 0\nnr_periods 1\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0",
+    "memory.max": "1073741824",
+    "memory.current": "13066240",
+    "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+    "pids.max": "64",
+    "pids.current": "29",
+    "pids.events": "max 0"
+  },
+  {
+    "at": 1585.486080837,
+    "host_available_mib": 7224,
+    "cpu.max": "100000 100000",
+    "cpu.stat": "usage_usec 80642\nuser_usec 48606\nsystem_usec 32036\ncore_sched.force_idle_usec 0\nnr_periods 1\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0",
+    "memory.max": "1073741824",
+    "memory.current": "26116096",
+    "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+    "pids.max": "64",
+    "pids.current": "33",
+    "pids.events": "max 0"
+  },
+  {
+    "at": 1585.536454035,
+    "host_available_mib": 7155,
+    "cpu.max": "100000 100000",
+    "cpu.stat": "usage_usec 156814\nuser_usec 83634\nsystem_usec 73180\ncore_sched.force_idle_usec 0\nnr_periods 2\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0",
+    "memory.max": "1073741824",
+    "memory.current": "108605440",
+    "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+    "pids.max": "64",
+    "pids.current": "63",
+    "pids.events": "max 0"
+  },
+  {
+    "at": 1585.586939215,
+    "host_available_mib": 7262,
+    "cpu.max": null,
+    "cpu.stat": null,
+    "memory.max": null,
+    "memory.current": null,
+    "memory.events": null,
+    "pids.max": null,
+    "pids.current": null,
+    "pids.events": null
+  }
+]
