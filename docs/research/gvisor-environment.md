@@ -75,7 +75,10 @@ env -u DOCKER_CONTEXT -u DOCKER_HOST -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKE
 
 ## E05／E10 的憑證遮蔽
 
-跑到需要真 key 的兩列之前，先確認遮蔽已生效。所有證據寫入都經過 `Matrix.write()` 與 `Matrix.log()`，遮蔽掛在這兩個出口，涵蓋完整命令、stdout／stderr、終端輸出與 cgroup 記錄。
+跑到需要真 key 的兩列之前，先確認遮蔽已生效。遮蔽分兩層，**發布層才是邊界**：
+
+1. **harness 層**：`Matrix.write()` 與 `Matrix.log()` 的寫入會就地遮蔽，涵蓋命令、stdout／stderr 與 cgroup 記錄。
+2. **發布層**：PID runner 的 `-shell.txt`／`-probe.txt` 是把 subprocess 輸出直接導進檔案，runsc 的 debug log 更是 runtime 自己寫的，兩者都不經過第 1 層。所以原始證據先留在 repo 外的私密目錄，再用 `scripts/gvisor-publish-evidence.py` 產生遮蔽後的發布包，hash 以**發布後的檔案**計算。只有發布包可以進 repo。
 
 - 預設就會遮蔽：名稱看起來像秘密的環境變數值（例如 `ANTHROPIC_API_KEY`）、已知的憑證格式（`sk-ant-`、`sk-`、GitHub token、AWS access key、Slack token、JWT、PEM 私鑰）、以及欄位名看起來像秘密時的值。
 - 若憑證不符合任何已知格式，必須自行登記：`--redact-file <私密檔案>`（每行一個值），或重複的 `--redact <值>`。優先用檔案或環境變數，命令列參數會留在 shell history。
@@ -83,10 +86,21 @@ env -u DOCKER_CONTEXT -u DOCKER_HOST -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKE
 - 遮蔽是降低意外外洩，不是保證。送出證據包之前仍要人工看過，並且用 `grep` 對自己知道的值再確認一次。
 
 ```sh
-printf '%s\n' "$SPIKE_MODEL_KEY" > "$SPIKE_EVIDENCE_DIR/../redact.txt"   # 私密目錄，不進 Git
-sudo python3 scripts/gvisor-no-key-matrix.py --redact-file "$SPIKE_EVIDENCE_DIR/../redact.txt" ...
-grep -R "$SPIKE_MODEL_KEY" "$SPIKE_EVIDENCE_DIR" && echo "LEAK: 不要提交" || echo "no leak"
+SPIKE_SECRETS="$SPIKE_EVIDENCE_DIR/../redact.txt"          # 私密目錄，不進 Git
+printf '%s\n' "$SPIKE_MODEL_KEY" > "$SPIKE_SECRETS"
+sudo python3 scripts/gvisor-no-key-matrix.py --redact-file "$SPIKE_SECRETS" ...
+
+# 原始證據留在本機；發布包才是要提交的東西。
+python3 scripts/gvisor-publish-evidence.py \
+  --raw "$SPIKE_EVIDENCE_DIR" \
+  --out docs/research/evidence/<日期>-<名稱> \
+  --redact-file "$SPIKE_SECRETS"
+# 回報 copied_unscrubbed（無法遮蔽的二進位檔）與 leaks；leaks 非空就 exit 1，不要提交。
+
+grep -R "$SPIKE_MODEL_KEY" docs/research/evidence/<日期>-<名稱> && echo "LEAK" || echo "no leak"
 ```
+
+發布工具會把 `.json` 與 `.jsonl` 解析後結構化遮蔽（欄位名看起來像秘密時連值一起遮），其餘文字檔逐字遮蔽，無法解碼的二進位檔原樣複製並列在 `copied_unscrubbed`，由人工判斷能不能發布。`bundle-sha256.json` 以發布後的位元組計算，所以它描述的就是審查者看得到的內容。
 
 ## 檔案格式與審查
 

@@ -29,7 +29,7 @@ SHAPES = (
 ASSIGNMENT = re.compile(
     r'(?i)(?P<name>[A-Za-z0-9_.\-]*(?:api[_-]?key|auth[_-]?token|access[_-]?token|secret|password|'
     r'passwd|credential|bearer|private[_-]?key|session[_-]?token)[A-Za-z0-9_.\-]*)'
-    r'(?P<sep>\s*[=:]\s*|\s+)(?P<value>"[^"]*"|\'[^\']*\'|\S+)')
+    r'(?P<sep>"?\s*[=:]\s*|\s+)(?P<value>"[^"]*"|\'[^\']*\'|\S+)')
 # Values shorter than this are too generic to mask safely (e.g. "none", "0").
 MIN_VALUE = 6
 # Literals that are never secrets, so masking them only destroys evidence.
