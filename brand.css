@@ -9,12 +9,10 @@
 .launch p { font-size: 13px; line-height: 1.8; color: #becbb6; }
 .launch-label { color: #aec79e; }
 .terminal-caption span:last-child { color: #a5b89a; }
-.prototype-note { display: flex; align-items: flex-start; gap: 14px; margin: -10px 0 26px; padding: 14px 16px; border: 1px solid #dce5d5; border-radius: 8px; background: #eef3e9; color: #4e6143; }
+.prototype-note { display: flex; align-items: flex-start; gap: 14px; margin: -10px 0 26px; padding: 14px 16px; border: 1px solid #dce5d5; border-left: 3px solid #6f8a5b; border-radius: 8px; background: #eef3e9; color: #4e6143; }
 .prototype-tag { flex-shrink: 0; font-size: 11px; line-height: 1.8; font-weight: 650; }
 .prototype-note p { margin: 0; font-size: 12px; line-height: 1.8; }
-@media (min-width: 561px) and (max-width: 850px) {
-  .brand .brand-copy { display: none; }
-}
+/* .brand-copy is a <span>, so style.css 的 @media(max-width:850px){.brand span{display:none}} 會命中它；下面這條靠特異度把手機版的品牌文字改回顯示。 */
 @media (max-width: 560px) {
   .brand { padding: 0; gap: 8px; }
   .brand .brand-mark { width: 30px; height: 30px; }
