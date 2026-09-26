@@ -33,11 +33,15 @@
 | E05 Claude marker | not_run | 等專用 key／模型／預算；CLI version 成功不等於模型任務成功 |
 | E06 PTY | pass | Alpine 非 root ptmx 最小／加強限制兩組均 exit 0；tmux resize、Ctrl-C、detach／reattach、強制中斷 client 後重連均有觀測 |
 | E07 CPU | pass | 0.5 CPU cap，20.082 秒內實測比率 0.499877，200 個 throttled periods；預定容差 0.35–0.65 |
-| E08 memory | pass | 128 MiB cap，逐批配置至 104 MiB 後容器 OOMKilled=true、container exit 137；host available 最低 7128 MiB |
+| E08 memory | pass（範圍見下） | 128 MiB cap，逐批配置至 104 MiB 後容器 OOMKilled=true、container exit 137；host available 最低 7128 MiB |
 | E09 PID | **fail** | runsc sandbox exit 2、Docker exec exit 128／WaitPID EOF；runc 對照能回 EAGAIN 並清理 child |
 | E10 cold/session | not_run | 留待 Claude session／缺 key／重新注入的完整驗證；未用一般檔案測試冒充整列通過 |
 
 E06 的外層 terminal resize 為 40×100，tmux 使用一行 status bar，pane `stty size` 實際為 39×100。工作 PID 107 在 detach、重新 attach、強制 kill Docker client、再次 attach 後均保留；tick 由 5 → 10 → 15 → 20 → 26，最後收到 Ctrl-C 並留下 SIGINT_RECEIVED。[原始 PTY 記錄](evidence/2026-09-27-no-key/E06.jsonl)
+
+E08 的 pass 只代表「128 MiB 上限有生效、影響限於該容器、host 可用量保留」。它**不代表 session 在記憶體壓力下存活**：實際結果是容器整個退出（exit 137、Running false），既有 shell、tmux session 與執行中的工作都會消失。E09 要求的存活條件（既有 shell 用 builtin 有回應、既有工作 heartbeat 前進、壓力解除後 recovery exec 回 0）這一輪沒有套用在 E08，也沒有收集對應證據，所以兩列的判定不能互相比較。記憶體壓力下的 session 存活另由 #67 追蹤，未驗證前不得宣稱「沙盒在撞到記憶體上限時仍可用」。
+
+這兩列其實指向同一個結構性質：gVisor 的 sentry 是主機上的單一程序，guest 的記憶體與程序都記在它身上，所以主機邊界被觸發時整個 sandbox 一起結束，而不是把錯誤關在 guest 內。E09 已找到的緩解模式（讓 guest 先撞到自己的限制）是否也適用於記憶體，屬於 #67 的範圍。
 
 E08 的 host cgroup `memory.current/events` 已取樣；因 sandbox 在 OOM 時快速退出、cgroup 隨即消失，50 ms 樣本**沒有捕捉到 oom_kill counter 的增加**。結論依 memory.max、配置進度、Docker OOMKilled=true／exit 137，以及 host headroom 判定；不把 counter=0 寫成觀測到 event。[memory 原始記錄](evidence/2026-09-27-no-key/E08.jsonl)、[cgroup 樣本](evidence/2026-09-27-no-key/E08-cgroup.json)
 
