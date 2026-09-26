@@ -73,6 +73,21 @@ env -u DOCKER_CONTEXT -u DOCKER_HOST -u DOCKER_TLS -u DOCKER_TLS_VERIFY -u DOCKE
 
 參照 [官方 runtime 選擇方式](https://gvisor.dev/docs/user_guide/quick_start/docker/) 與 [上游 #14761](https://github.com/google/gvisor/issues/14761)。上游狀態不能取代固定版本實測；失敗不能以 root 或改成 runc 當通過。
 
+## E05／E10 的憑證遮蔽
+
+跑到需要真 key 的兩列之前，先確認遮蔽已生效。所有證據寫入都經過 `Matrix.write()` 與 `Matrix.log()`，遮蔽掛在這兩個出口，涵蓋完整命令、stdout／stderr、終端輸出與 cgroup 記錄。
+
+- 預設就會遮蔽：名稱看起來像秘密的環境變數值（例如 `ANTHROPIC_API_KEY`）、已知的憑證格式（`sk-ant-`、`sk-`、GitHub token、AWS access key、Slack token、JWT、PEM 私鑰）、以及欄位名看起來像秘密時的值。
+- 若憑證不符合任何已知格式，必須自行登記：`--redact-file <私密檔案>`（每行一個值），或重複的 `--redact <值>`。優先用檔案或環境變數，命令列參數會留在 shell history。
+- 不會被遮蔽的欄位：`credential_delivery_ref`、`authorization_ref`、`credentials_injected`、`model_budget`。這些依設計只放參照與摘要，不可放實際秘密。
+- 遮蔽是降低意外外洩，不是保證。送出證據包之前仍要人工看過，並且用 `grep` 對自己知道的值再確認一次。
+
+```sh
+printf '%s\n' "$SPIKE_MODEL_KEY" > "$SPIKE_EVIDENCE_DIR/../redact.txt"   # 私密目錄，不進 Git
+sudo python3 scripts/gvisor-no-key-matrix.py --redact-file "$SPIKE_EVIDENCE_DIR/../redact.txt" ...
+grep -R "$SPIKE_MODEL_KEY" "$SPIKE_EVIDENCE_DIR" && echo "LEAK: 不要提交" || echo "no leak"
+```
+
 ## 檔案格式與審查
 
 每個 evidence 欄位為 `[{"path":"E06-ptmx.log","sha256":"64 位小寫 hex"}]`，相對 report.json 所在資料夾。先遮蔽秘密、保留原本 exit code／量測，再用 `sha256sum`（Linux）或 `shasum -a 256`（macOS）算摘要。檔案更新後要重新計算；原始秘密不可推上 PR。工具只檢查完整性，不會自動偵測或清除秘密。

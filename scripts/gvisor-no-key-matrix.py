@@ -26,6 +26,9 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('report', ROOT / 'scripts/gvisor-report.py')
 report_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(report_module)
+redact_spec = importlib.util.spec_from_file_location('gvisor_redact', ROOT / 'scripts/gvisor_redact.py')
+redact_module = importlib.util.module_from_spec(redact_spec)
+redact_spec.loader.exec_module(redact_module)
 FIXTURE_COMMIT = '02dc635051bb005d65e31f0a7e1f81e747498bd3'
 
 
@@ -51,6 +54,11 @@ class Matrix:
         self.docker = ['docker', '--host', 'unix:///var/run/docker.sock']
         self.env = {k: v for k, v in os.environ.items() if not k.startswith('DOCKER_')}
         self.env['LC_ALL'] = 'C.UTF-8'
+        # Every evidence write goes through write()/log(), so scrub there once.
+        # E05/E10 inject a real key; registering it keeps it out of the bundle.
+        self.redactor = redact_module.Redactor().add_from_environ(self.env)
+        for secret in getattr(args, 'redact', None) or []:
+            self.redactor.add(secret)
         self.write('policy.json', {'min_host_available_mib': 2048, 'cpu_quota': 0.5,
             'cpu_seconds': 20, 'cpu_ratio_range': [0.35, 0.65], 'memory_limit_mib': 128,
             'max_memory_allocation_mib': 256, 'pid_limit': 64, 'max_forks': 80,
@@ -61,11 +69,11 @@ class Matrix:
                                           for p in sorted(source_paths) if p.is_file()})
 
     def write(self, name, obj):
-        (self.out / name).write_text(json.dumps(obj, indent=2) + '\n')
+        (self.out / name).write_text(json.dumps(self.redactor.scrub(obj), indent=2) + '\n')
 
     def log(self, record):
         with (self.out / (self.label + '.jsonl')).open('a') as output:
-            output.write(json.dumps(record) + '\n')
+            output.write(json.dumps(self.redactor.scrub(record)) + '\n')
 
     def command(self, argv, timeout=60, check=True):
         started = now()
@@ -433,9 +441,17 @@ def main():
     parser.add_argument('--image', required=True)
     parser.add_argument('--pty-image', required=True, help='Pinned Alpine image ID for upstream ptmx comparison')
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--redact', action='append', metavar='VALUE',
+                        help='Literal value to mask in evidence. Repeatable. Prefer a file or '
+                             'env var over a shell argument, which lands in shell history.')
+    parser.add_argument('--redact-file', type=Path, metavar='PATH',
+                        help='File of literal secrets to mask, one per line.')
     parser.add_argument('--cases', nargs='+', choices=['E01', 'E02', 'E03', 'E04', 'E06', 'E07', 'E08', 'E09'],
                         default=['E01', 'E02', 'E03', 'E04', 'E06', 'E07', 'E08', 'E09'])
     args = parser.parse_args()
+    if args.redact_file:
+        args.redact = (args.redact or []) + [line.strip() for line in
+                                             args.redact_file.read_text().splitlines() if line.strip()]
     if platform.system() != 'Linux' or os.geteuid() != 0:
         parser.error('Run on the authorized dedicated Linux host as root')
     if not all(re.fullmatch(r'sha256:[0-9a-f]{64}', value) for value in (args.image, args.pty_image)):
