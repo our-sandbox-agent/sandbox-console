@@ -1,6 +1,12 @@
-# Sandbox Console — 互動雛形
+# NexSpace 星際工作站 — 互動雛形
 
 AI Agent 沙盒產品的第一版可操作介面。這是本機模擬，沒有真正的 VM、Agent API、shell 執行或收費。
+
+本輪採用暫定品牌「星際工作站 NexSpace」，以軌道與 N 字母組成簡單字標。產品願景是「給 AI Agent 一個獨立工作空間。關上筆電，任務繼續。」此願景尚未由雛形實作：目前關閉頁面後，模擬計時會暫停。
+
+品牌預覽不變更 `sandbox` 模擬指令、瀏覽器儲存 key 或 GitHub Pages 路徑；NexSpace.fyi 尚未在此專案設定或啟用。
+
+[桌面與手機品牌預覽](docs/brand/README.md)
 
 線上展示：https://our-sandbox-agent.github.io/sandbox-console/
 
