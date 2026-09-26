@@ -1,0 +1,85 @@
+Sep 26 16:58:11 sandbox-spike kernel: docker0: port 1(vetha0914eb) entered blocking state
+Sep 26 16:58:11 sandbox-spike kernel: docker0: port 1(vetha0914eb) entered disabled state
+Sep 26 16:58:11 sandbox-spike kernel: vetha0914eb: entered allmulticast mode
+Sep 26 16:58:11 sandbox-spike kernel: vetha0914eb: entered promiscuous mode
+Sep 26 16:58:11 sandbox-spike kernel: eth0: renamed from vethc2d654d
+Sep 26 16:58:11 sandbox-spike kernel: docker0: port 1(vetha0914eb) entered blocking state
+Sep 26 16:58:11 sandbox-spike kernel: docker0: port 1(vetha0914eb) entered forwarding state
+Sep 26 16:58:11 sandbox-spike kernel: cgroup: fork rejected by pids controller in /system.slice/docker-23b9a5606c6c05f71d745f32887663ca6069b1d0f0883e9bd8133dc25cf8b2f1.scope
+Sep 26 16:58:12 sandbox-spike kernel: vethc2d654d: renamed from eth0
+Sep 26 16:58:12 sandbox-spike kernel: docker0: port 1(vetha0914eb) entered disabled state
+Sep 26 16:58:12 sandbox-spike kernel: docker0: port 1(vetha0914eb) entered disabled state
+Sep 26 16:58:12 sandbox-spike kernel: vetha0914eb (unregistering): left allmulticast mode
+Sep 26 16:58:12 sandbox-spike kernel: vetha0914eb (unregistering): left promiscuous mode
+Sep 26 16:58:12 sandbox-spike kernel: docker0: port 1(vetha0914eb) entered disabled state
+Sep 26 16:58:12 sandbox-spike kernel: docker0: port 1(veth2b6d0a6) entered blocking state
+Sep 26 16:58:12 sandbox-spike kernel: docker0: port 1(veth2b6d0a6) entered disabled state
+Sep 26 16:58:12 sandbox-spike kernel: veth2b6d0a6: entered allmulticast mode
+Sep 26 16:58:12 sandbox-spike kernel: veth2b6d0a6: entered promiscuous mode
+Sep 26 16:58:12 sandbox-spike kernel: eth0: renamed from veth3716fb4
+Sep 26 16:58:12 sandbox-spike kernel: docker0: port 1(veth2b6d0a6) entered blocking state
+Sep 26 16:58:12 sandbox-spike kernel: docker0: port 1(veth2b6d0a6) entered forwarding state
+Sep 26 16:58:13 sandbox-spike kernel: cgroup: fork rejected by pids controller in /system.slice/docker-6085abb8eb21d91e8dea8ecb72193861a2f64921bd55f6803ea7c27a7d38083c.scope
+Sep 26 16:58:13 sandbox-spike kernel: veth3716fb4: renamed from eth0
+Sep 26 16:58:13 sandbox-spike kernel: docker0: port 1(veth2b6d0a6) entered disabled state
+Sep 26 16:58:13 sandbox-spike kernel: docker0: port 1(veth2b6d0a6) entered disabled state
+Sep 26 16:58:13 sandbox-spike kernel: veth2b6d0a6 (unregistering): left allmulticast mode
+Sep 26 16:58:13 sandbox-spike kernel: veth2b6d0a6 (unregistering): left promiscuous mode
+Sep 26 16:58:13 sandbox-spike kernel: docker0: port 1(veth2b6d0a6) entered disabled state
+Sep 26 16:58:13 sandbox-spike kernel: docker0: port 1(veth18d7423) entered blocking state
+Sep 26 16:58:13 sandbox-spike kernel: docker0: port 1(veth18d7423) entered disabled state
+Sep 26 16:58:13 sandbox-spike kernel: veth18d7423: entered allmulticast mode
+Sep 26 16:58:13 sandbox-spike kernel: veth18d7423: entered promiscuous mode
+Sep 26 16:58:13 sandbox-spike kernel: eth0: renamed from vethd5f3ba9
+Sep 26 16:58:13 sandbox-spike kernel: docker0: port 1(veth18d7423) entered blocking state
+Sep 26 16:58:13 sandbox-spike kernel: docker0: port 1(veth18d7423) entered forwarding state
+Sep 26 16:58:15 sandbox-spike kernel: cgroup: fork rejected by pids controller in /system.slice/docker-2600e37d8cd3e03f1078366d7ba9d782d9d23b7f6ff61b2daad60994623cfa4a.scope
+Sep 26 16:58:15 sandbox-spike kernel: docker0: port 1(veth18d7423) entered disabled state
+Sep 26 16:58:15 sandbox-spike kernel: vethd5f3ba9: renamed from eth0
+Sep 26 16:58:15 sandbox-spike kernel: docker0: port 1(veth18d7423) entered disabled state
+Sep 26 16:58:15 sandbox-spike kernel: veth18d7423 (unregistering): left allmulticast mode
+Sep 26 16:58:15 sandbox-spike kernel: veth18d7423 (unregistering): left promiscuous mode
+Sep 26 16:58:15 sandbox-spike kernel: docker0: port 1(veth18d7423) entered disabled state
+Sep 26 16:58:15 sandbox-spike kernel: docker0: port 1(veth5335d7d) entered blocking state
+Sep 26 16:58:15 sandbox-spike kernel: docker0: port 1(veth5335d7d) entered disabled state
+Sep 26 16:58:15 sandbox-spike kernel: veth5335d7d: entered allmulticast mode
+Sep 26 16:58:15 sandbox-spike kernel: veth5335d7d: entered promiscuous mode
+Sep 26 16:58:15 sandbox-spike kernel: eth0: renamed from vethbb42347
+Sep 26 16:58:15 sandbox-spike kernel: docker0: port 1(veth5335d7d) entered blocking state
+Sep 26 16:58:15 sandbox-spike kernel: docker0: port 1(veth5335d7d) entered forwarding state
+Sep 26 16:58:16 sandbox-spike kernel: cgroup: fork rejected by pids controller in /system.slice/docker-a6144ef3fd531641d51812569d8807cd26c1914d7dde5da458754b659355373f.scope
+Sep 26 16:58:20 sandbox-spike kernel: docker0: port 1(veth5335d7d) entered disabled state
+Sep 26 16:58:20 sandbox-spike kernel: vethbb42347: renamed from eth0
+Sep 26 16:58:20 sandbox-spike kernel: docker0: port 1(veth5335d7d) entered disabled state
+Sep 26 16:58:20 sandbox-spike kernel: veth5335d7d (unregistering): left allmulticast mode
+Sep 26 16:58:20 sandbox-spike kernel: veth5335d7d (unregistering): left promiscuous mode
+Sep 26 16:58:20 sandbox-spike kernel: docker0: port 1(veth5335d7d) entered disabled state
+Sep 26 16:58:20 sandbox-spike kernel: docker0: port 1(veth2b448c7) entered blocking state
+Sep 26 16:58:20 sandbox-spike kernel: docker0: port 1(veth2b448c7) entered disabled state
+Sep 26 16:58:20 sandbox-spike kernel: veth2b448c7: entered allmulticast mode
+Sep 26 16:58:20 sandbox-spike kernel: veth2b448c7: entered promiscuous mode
+Sep 26 16:58:20 sandbox-spike kernel: eth0: renamed from vetha17c9ae
+Sep 26 16:58:20 sandbox-spike kernel: docker0: port 1(veth2b448c7) entered blocking state
+Sep 26 16:58:20 sandbox-spike kernel: docker0: port 1(veth2b448c7) entered forwarding state
+Sep 26 16:58:22 sandbox-spike kernel: cgroup: fork rejected by pids controller in /system.slice/docker-d470301ca20888706c4e28c4adc7a87d63b3ad046bc49048810a42ea51082b08.scope
+Sep 26 16:58:26 sandbox-spike kernel: docker0: port 1(veth2b448c7) entered disabled state
+Sep 26 16:58:26 sandbox-spike kernel: vetha17c9ae: renamed from eth0
+Sep 26 16:58:26 sandbox-spike kernel: docker0: port 1(veth2b448c7) entered disabled state
+Sep 26 16:58:26 sandbox-spike kernel: veth2b448c7 (unregistering): left allmulticast mode
+Sep 26 16:58:26 sandbox-spike kernel: veth2b448c7 (unregistering): left promiscuous mode
+Sep 26 16:58:26 sandbox-spike kernel: docker0: port 1(veth2b448c7) entered disabled state
+Sep 26 16:58:26 sandbox-spike kernel: docker0: port 1(vethc6faca4) entered blocking state
+Sep 26 16:58:26 sandbox-spike kernel: docker0: port 1(vethc6faca4) entered disabled state
+Sep 26 16:58:26 sandbox-spike kernel: vethc6faca4: entered allmulticast mode
+Sep 26 16:58:26 sandbox-spike kernel: vethc6faca4: entered promiscuous mode
+Sep 26 16:58:26 sandbox-spike kernel: eth0: renamed from vethddbb490
+Sep 26 16:58:26 sandbox-spike kernel: docker0: port 1(vethc6faca4) entered blocking state
+Sep 26 16:58:26 sandbox-spike kernel: docker0: port 1(vethc6faca4) entered forwarding state
+Sep 26 16:58:29 sandbox-spike kernel: cgroup: fork rejected by pids controller in /system.slice/docker-8c403b3caabf3038809cc0742f7347d5dca2f6c80f70a70d0a28e59afc4da599.scope
+Sep 26 16:58:33 sandbox-spike kernel: docker0: port 1(vethc6faca4) entered disabled state
+Sep 26 16:58:33 sandbox-spike kernel: vethddbb490: renamed from eth0
+Sep 26 16:58:33 sandbox-spike kernel: docker0: port 1(vethc6faca4) entered disabled state
+Sep 26 16:58:33 sandbox-spike kernel: vethc6faca4 (unregistering): left allmulticast mode
+Sep 26 16:58:33 sandbox-spike kernel: vethc6faca4 (unregistering): left promiscuous mode
+Sep 26 16:58:33 sandbox-spike kernel: docker0: port 1(vethc6faca4) entered disabled state
+Sep 26 16:59:04 sandbox-spike kernel: audit: type=1400 audit(1790441944.452:125): apparmor="STATUS" operation="profile_replace" info="same as current profile, skipping" profile="unconfined" name="docker-default" pid=18421 comm="apparmor_parser"

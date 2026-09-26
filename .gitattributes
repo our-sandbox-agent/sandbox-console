@@ -2,3 +2,4 @@
 docs/research/evidence/** -text
 # Preserve whitespace in raw build output rather than editing observed bytes.
 docs/research/evidence/**/build.log -whitespace
+docs/research/evidence/**/runtime-logs/** -whitespace
