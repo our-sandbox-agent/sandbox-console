@@ -15,12 +15,20 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('matrix', ROOT / 'scripts/gvisor-no-key-matrix.py')
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
+def case_passed(probe_exit, state, guard, events, shell_text, recovery):
+    return (probe_exit == 0 and state['Running'] and guard is None
+        and any(e.get('rejected_eagain') for e in events)
+        and any(e.get('progress') for e in events)
+        and 'SHELL_AT_LIMIT_OK' in shell_text
+        and 'SHELL_AFTER_OK' in shell_text
+        and recovery is not None and recovery['exit_code'] == 0
+        and recovery['stdout'] == 'RECOVERY_EXEC_OK')
 
 
 def main():
+    spec = importlib.util.spec_from_file_location('matrix', ROOT / 'scripts/gvisor-no-key-matrix.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--image', required=True)
     parser.add_argument('--output', type=Path, required=True)
@@ -93,8 +101,11 @@ def main():
                         state = m.inspect(cid, '.State')
                         m.write(m.label + '-inspect.json', m.inspect(cid, '.'))
                         m.dock('logs', cid, check=False)
+                        recovery = None
                         if state['Running']:
-                            m.execute(cid, 'sh', '-c', 'printf RECOVERY_EXEC_OK', check=False)
+                            result = m.execute(cid, 'sh', '-c', 'printf RECOVERY_EXEC_OK', check=False)
+                            recovery = {'exit_code': result.returncode, 'stdout': result.stdout,
+                                        'stderr': result.stderr}
                         try:
                             shell.stdin.write('printf "SHELL_AFTER_OK\\n"\nexit\n')
                             shell.stdin.flush()
@@ -115,13 +126,11 @@ def main():
                             events.append(json.loads(line))
                         except ValueError:
                             pass
-                    passed = (probe.returncode == 0 and state['Running'] and guard is None
-                        and any(e.get('rejected_eagain') for e in events)
-                        and any(e.get('progress') for e in events)
-                        and 'SHELL_AT_LIMIT_OK' in shell_path.read_text()
-                        and 'SHELL_AFTER_OK' in shell_path.read_text())
+                    passed = case_passed(probe.returncode, state, guard, events,
+                                         shell_path.read_text(), recovery)
                     row = {'runtime': runtime, 'cap': cap, 'passed': passed, 'probe_exit': probe.returncode,
-                           'container_state': state, 'guard': guard, 'events': events}
+                           'container_state': state, 'guard': guard, 'events': events,
+                           'recovery_exec': recovery}
                     results.append(row)
                     m.write('results.json', results)
                 # Keep inspectable until the shared ownership-checked cleanup.
