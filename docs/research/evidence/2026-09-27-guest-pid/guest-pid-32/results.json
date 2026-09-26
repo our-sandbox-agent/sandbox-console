@@ -1,0 +1,196 @@
+[
+  {
+    "runtime": "runsc",
+    "cap": 128,
+    "guest_limit": 32,
+    "passed": true,
+    "probe_exit": 0,
+    "container_state": {
+      "Status": "running",
+      "Running": true,
+      "Paused": false,
+      "Restarting": false,
+      "OOMKilled": false,
+      "Dead": false,
+      "Pid": 19860,
+      "ExitCode": 0,
+      "Error": "",
+      "StartedAt": "2026-09-26T17:16:55.070404788Z",
+      "FinishedAt": "0001-01-01T00:00:00Z"
+    },
+    "guard": null,
+    "events": [
+      {
+        "event": "limits",
+        "uid": 1000,
+        "nproc_soft": 32,
+        "nproc_hard": 32,
+        "raise_hard_limit": "ValueError"
+      },
+      {
+        "event": "fork",
+        "children": 2,
+        "guest_processes": 5
+      },
+      {
+        "event": "fork",
+        "children": 3,
+        "guest_processes": 6
+      },
+      {
+        "event": "fork",
+        "children": 4,
+        "guest_processes": 7
+      },
+      {
+        "event": "fork",
+        "children": 5,
+        "guest_processes": 8
+      },
+      {
+        "event": "fork",
+        "children": 6,
+        "guest_processes": 9
+      },
+      {
+        "event": "fork",
+        "children": 7,
+        "guest_processes": 10
+      },
+      {
+        "event": "fork",
+        "children": 8,
+        "guest_processes": 11
+      },
+      {
+        "event": "fork",
+        "children": 9,
+        "guest_processes": 12
+      },
+      {
+        "event": "fork",
+        "children": 10,
+        "guest_processes": 13
+      },
+      {
+        "event": "fork",
+        "children": 11,
+        "guest_processes": 14
+      },
+      {
+        "event": "fork",
+        "children": 12,
+        "guest_processes": 15
+      },
+      {
+        "event": "fork",
+        "children": 13,
+        "guest_processes": 16
+      },
+      {
+        "event": "fork",
+        "children": 14,
+        "guest_processes": 17
+      },
+      {
+        "event": "fork",
+        "children": 15,
+        "guest_processes": 18
+      },
+      {
+        "event": "fork",
+        "children": 16,
+        "guest_processes": 19
+      },
+      {
+        "event": "fork",
+        "children": 17,
+        "guest_processes": 20
+      },
+      {
+        "event": "fork",
+        "children": 18,
+        "guest_processes": 21
+      },
+      {
+        "event": "fork",
+        "children": 19,
+        "guest_processes": 22
+      },
+      {
+        "event": "fork",
+        "children": 20,
+        "guest_processes": 23
+      },
+      {
+        "event": "fork",
+        "children": 21,
+        "guest_processes": 24
+      },
+      {
+        "event": "fork",
+        "children": 22,
+        "guest_processes": 25
+      },
+      {
+        "event": "fork",
+        "children": 23,
+        "guest_processes": 26
+      },
+      {
+        "event": "fork",
+        "children": 24,
+        "guest_processes": 27
+      },
+      {
+        "event": "fork",
+        "children": 25,
+        "guest_processes": 28
+      },
+      {
+        "event": "fork",
+        "children": 26,
+        "guest_processes": 29
+      },
+      {
+        "event": "fork",
+        "children": 27,
+        "guest_processes": 30
+      },
+      {
+        "event": "fork",
+        "children": 28,
+        "guest_processes": 31
+      },
+      {
+        "event": "fork",
+        "children": 29,
+        "guest_processes": 32
+      },
+      {
+        "event": "at_limit",
+        "failure": {
+          "errno": 11,
+          "message": "[Errno 11] Resource temporarily unavailable"
+        },
+        "children": 29,
+        "guest_processes": 32
+      },
+      {
+        "event": "existing_work",
+        "before": "4",
+        "after": "34",
+        "progress": true
+      },
+      {
+        "event": "reaped",
+        "rejected_eagain": true
+      }
+    ],
+    "recovery_exec": {
+      "exit_code": 0,
+      "stdout": "RECOVERY_EXEC_OK",
+      "stderr": ""
+    }
+  }
+]

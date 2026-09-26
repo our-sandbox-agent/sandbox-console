@@ -1,0 +1,4 @@
+{
+  "scripts/gvisor-pid-investigation.py": "04369df50378582260afdaea2d2e66b52900f281257e96c30234f9e60540b504",
+  "diagnostics/gvisor/probes/pid-pressure.py": "530e1d3dee87fa97fc1c06714ed8cc9606bb31161753dbfeef6cf61ccbe598f4"
+}

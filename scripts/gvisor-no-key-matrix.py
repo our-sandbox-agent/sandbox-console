@@ -90,7 +90,7 @@ class Matrix:
     def inspect(self, cid, field):
         return json.loads(self.dock('inspect', '--format', '{{json ' + field + '}}', cid).stdout)
 
-    def create(self, suffix, cpu='1', memory='1g', pids='256', runtime='runsc', hardened=True):
+    def create(self, suffix, cpu='1', memory='1g', pids='256', runtime='runsc', hardened=True, guest_pids=None):
         if available_mib() < 3072:
             raise RuntimeError('Not enough headroom to start another test')
         name = 'spike-' + self.run_id[:8] + '-' + suffix
@@ -102,6 +102,8 @@ class Matrix:
                 '--cpus', cpu, '--memory', memory, '--memory-swap', memory, '--pids-limit', pids]
         if hardened:
             args += ['--cap-drop', 'ALL', '--security-opt', 'no-new-privileges']
+        if guest_pids is not None:
+            args += ['--ulimit', f'nproc={guest_pids}:{guest_pids}']
         args += [self.args.image, 'sleep', 'infinity']
         cid = self.dock(*args).stdout.strip()
         entry['id'] = cid

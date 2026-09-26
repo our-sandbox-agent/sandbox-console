@@ -4,11 +4,23 @@ import json
 import os
 from pathlib import Path
 import signal
+import resource
 import time
 
 children = []
 failure = None
 heartbeat = Path('/workspace/heartbeat')
+soft, hard = resource.getrlimit(resource.RLIMIT_NPROC)
+raise_result = 'not_attempted_unlimited'
+if hard != resource.RLIM_INFINITY:
+    try:
+        resource.setrlimit(resource.RLIMIT_NPROC, (hard + 1, hard + 1))
+        raise_result = 'unexpectedly_allowed'
+        resource.setrlimit(resource.RLIMIT_NPROC, (soft, hard))
+    except (ValueError, OSError) as error:
+        raise_result = type(error).__name__
+print(json.dumps({'event': 'limits', 'uid': os.getuid(), 'nproc_soft': soft,
+                  'nproc_hard': hard, 'raise_hard_limit': raise_result}), flush=True)
 worker = os.fork()
 if worker == 0:
     for tick in range(600):

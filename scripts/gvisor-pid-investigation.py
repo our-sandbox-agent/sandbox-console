@@ -32,11 +32,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--image', required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--guest-limit', type=int, choices=[32, 64])
+    parser.add_argument('--caps', type=int, nargs='+', choices=[64, 128, 256], default=[64, 128, 256])
+    parser.add_argument('--runtimes', nargs='+', choices=['runsc', 'runc'], default=['runsc', 'runc'])
     args = parser.parse_args()
     if os.geteuid() != 0 or not args.image.startswith('sha256:'):
         parser.error('requires Linux root and immutable local image ID')
     m = module.Matrix(args)
-    m.write('pid-policy.json', {'caps': [64, 128, 256], 'max_forks': 272,
+    m.write('pid-policy.json', {'caps': args.caps, 'guest_limit': args.guest_limit, 'max_forks': 272,
         'hold_seconds': 3, 'case_timeout_seconds': 45, 'sample_seconds': .01,
         'model_requests': 0, 'acceptance': 'EAGAIN, existing shell and work responsive, reap, container alive, host headroom >= 2 GiB'})
     m.write('pid-source.json', {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
@@ -48,10 +51,10 @@ def main():
         m.command(['docker', 'version'])
         m.command(['runsc', '--version'])
         m.command(['cat', '/etc/docker/daemon.json'])
-        for runtime in ['runsc', 'runc']:
-            for cap in [64, 128, 256]:
+        for runtime in args.runtimes:
+            for cap in args.caps:
                 m.label = f'{runtime}-{cap}'
-                cid = m.create(m.label, pids=str(cap), runtime=runtime)
+                cid = m.create(m.label, pids=str(cap), runtime=runtime, guest_pids=args.guest_limit)
                 cg = m.cgroup(cid)
                 m.dock('cp', str(ROOT / 'diagnostics/gvisor/probes/pid-pressure.py'), cid + ':/workspace/pid-pressure.py')
                 # This shell exists before pressure. Commands use only shell builtins.
@@ -98,8 +101,10 @@ def main():
                                     break
                                 time.sleep(.02)
                             probe.wait(timeout=5)
-                        state = m.inspect(cid, '.State')
-                        m.write(m.label + '-inspect.json', m.inspect(cid, '.'))
+                        time.sleep(.2)  # Allow Docker to consume a runtime exit event.
+                        inspection = m.inspect(cid, '.')
+                        state = inspection['State']
+                        m.write(m.label + '-inspect.json', inspection)
                         m.dock('logs', cid, check=False)
                         recovery = None
                         if state['Running']:
@@ -128,7 +133,7 @@ def main():
                             pass
                     passed = case_passed(probe.returncode, state, guard, events,
                                          shell_path.read_text(), recovery)
-                    row = {'runtime': runtime, 'cap': cap, 'passed': passed, 'probe_exit': probe.returncode,
+                    row = {'runtime': runtime, 'cap': cap, 'guest_limit': args.guest_limit, 'passed': passed, 'probe_exit': probe.returncode,
                            'container_state': state, 'guard': guard, 'events': events,
                            'recovery_exec': recovery}
                     results.append(row)
