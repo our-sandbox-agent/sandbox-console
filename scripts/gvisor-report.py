@@ -11,7 +11,7 @@ from pathlib import Path
 CASES = tuple(f"E{i:02}" for i in range(1, 11))
 ENV_FIELDS = (
     "host_alias", "authorization_ref", "operator", "kernel", "arch", "docker",
-    "runsc", "claude", "node", "git", "tmux", "cgroup", "image_pin",
+    "runsc", "runsc_platform", "claude", "node", "git", "tmux", "cgroup", "image_pin",
     "limits_and_headroom", "model_budget", "credential_delivery_ref",
 )
 
@@ -78,6 +78,8 @@ def check(report, root):
     for field in ENV_FIELDS:
         if not nonempty(env.get(field)):
             problems.append(f"environment.{field}: required")
+    if env.get("runsc_platform") not in ("systrap", "kvm", "ptrace"):
+        problems.append("environment.runsc_platform: expected systrap, kvm or ptrace")
     if not re.fullmatch(r"(?:[^\s@]+@)?sha256:[0-9a-f]{64}", env.get("image_pin") or ""):
         problems.append("environment.image_pin: immutable pin required")
     preflight = report.get("preflight", {})

@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "run_id": "dee9adeb-d0ee-4e59-8da7-8bd314f295d9",
+  "created_at": "2026-09-26T16:36:53.776727+00:00",
+  "environment": {
+    "host_alias": "local-hyperv-spike",
+    "authorization_ref": "user-authorized-local-vm-2026-09-26",
+    "operator": "Codex",
+    "kernel": "6.8.0-142-generic",
+    "arch": "x86_64",
+    "docker": "29.8.1",
+    "runsc": "runsc version release-20260921.0\nspec: 1.2.1",
+    "runsc_platform": "systrap",
+    "claude": "2.1.283 (Claude Code)",
+    "node": "v22.23.3",
+    "git": "git version 2.39.5",
+    "tmux": "tmux 3.3a",
+    "cgroup": "2/systemd",
+    "image_pin": "sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf",
+    "limits_and_headroom": "policy.json; initial available 7318 MiB; one resource probe at a time",
+    "model_budget": "No paid calls authorized for this run; 0 calls",
+    "credential_delivery_ref": "Not configured; no credentials injected"
+  },
+  "preflight": {
+    "verdict": "ready_for_manual_matrix_not_go",
+    "evidence": [
+      {
+        "path": "preflight.json",
+        "sha256": "8484827193cc857c24d2124f5549dd423e2481cd72b7e8e04009900aad9dea0e"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "E01",
+      "status": "pass",
+      "started_at": "2026-09-26T16:36:55.359427+00:00",
+      "finished_at": "2026-09-26T16:36:55.468082+00:00",
+      "command": "python3 scripts/gvisor-no-key-matrix.py --image sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf --pty-image sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0 --cases E01 --output NEW_DIRECTORY",
+      "exit_code": 0,
+      "expected": "runsc process, systrap flags and runtime inspect match",
+      "observed": "Runtime inspect, daemon flags and live host process recorded",
+      "claude_before": "2.1.283 (Claude Code)",
+      "claude_after": "2.1.283 (Claude Code)",
+      "evidence": [
+        {
+          "path": "E01.jsonl",
+          "sha256": "7d2a5e20ad66dec48872af48fef6d431554ab361d9a5a568c405c55a0d7b42bd"
+        }
+      ]
+    },
+    {
+      "id": "E02",
+      "status": "pass",
+      "started_at": "2026-09-26T16:36:55.468372+00:00",
+      "finished_at": "2026-09-26T16:36:55.570334+00:00",
+      "command": "python3 scripts/gvisor-no-key-matrix.py --image sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf --pty-image sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0 --cases E02 --output NEW_DIRECTORY",
+      "exit_code": 0,
+      "expected": "UID 1000 and SHELL_OK",
+      "observed": "uid=1000(node) gid=1000(node) groups=1000(node)\nSHELL_OK",
+      "claude_before": "2.1.283 (Claude Code)",
+      "claude_after": "2.1.283 (Claude Code)",
+      "evidence": [
+        {
+          "path": "E02.jsonl",
+          "sha256": "c0bc1ab3a7741e8a2dbfa7b4612b0e948967c12a1cc3604dd4adfd8deef1f620"
+        }
+      ]
+    },
+    {
+      "id": "E03",
+      "status": "pass",
+      "started_at": "2026-09-26T16:36:55.570912+00:00",
+      "finished_at": "2026-09-26T16:36:57.640772+00:00",
+      "command": "python3 scripts/gvisor-no-key-matrix.py --image sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf --pty-image sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0 --cases E03 --output NEW_DIRECTORY",
+      "exit_code": 0,
+      "expected": "Public fixture commit and hashes match",
+      "observed": "02dc635051bb005d65e31f0a7e1f81e747498bd3\na9ac9ba929909fb3f716b13377e7f851ab35dc359279c7597de262b0a2849058  package-lock.json\n1b6318096afe8b1368c2e1346c7783d1705807abd5318c193921a5f09321c00c  lifecycle.test.js\ne579fb5bee21bb57810d9e1dbc92f180fd5df7a0d5f7c7f293233aa1062ec2e6  file-deletion.test.js",
+      "claude_before": "2.1.283 (Claude Code)",
+      "claude_after": "2.1.283 (Claude Code)",
+      "evidence": [
+        {
+          "path": "E03.jsonl",
+          "sha256": "9ded1721c0404870426af464477adae75de9e1dcd183fe9005e0166e8af4c874"
+        }
+      ]
+    },
+    {
+      "id": "E04",
+      "status": "pass",
+      "started_at": "2026-09-26T16:36:57.641112+00:00",
+      "finished_at": "2026-09-26T16:36:58.865894+00:00",
+      "command": "python3 scripts/gvisor-no-key-matrix.py --image sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf --pty-image sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0 --cases E04 --output NEW_DIRECTORY",
+      "exit_code": 0,
+      "expected": "Pinned lockfile installs and tests exit 0",
+      "observed": "Pinned public fixture npm ci and node tests completed; full TAP in log",
+      "claude_before": "2.1.283 (Claude Code)",
+      "claude_after": "2.1.283 (Claude Code)",
+      "evidence": [
+        {
+          "path": "E04.jsonl",
+          "sha256": "570ed453e8e5471313d268ae8e93e6bbaf655007e64ce32e560dcd75e817a26a"
+        }
+      ]
+    },
+    {
+      "id": "E05",
+      "status": "not_run",
+      "started_at": null,
+      "finished_at": null,
+      "command": null,
+      "exit_code": null,
+      "expected": null,
+      "observed": null,
+      "claude_before": null,
+      "claude_after": null,
+      "evidence": []
+    },
+    {
+      "id": "E06",
+      "status": "pass",
+      "started_at": "2026-09-26T16:36:58.866216+00:00",
+      "finished_at": "2026-09-26T16:37:07.885045+00:00",
+      "command": "python3 scripts/gvisor-no-key-matrix.py --image sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf --pty-image sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0 --cases E06 --output NEW_DIRECTORY",
+      "exit_code": 0,
+      "expected": "non-root ptmx; PTY resize; signal; detached progress; reattach same PID",
+      "observed": "{\"stty_size\": \"39 100\", \"before\": {\"pid\": 107, \"tick\": 5}, \"detached\": {\"pid\": 107, \"tick\": 10}, \"reattached\": {\"pid\": 107, \"tick\": 15}, \"client_killed\": {\"pid\": 107, \"tick\": 20}, \"recovered\": {\"pid\": 107, \"tick\": 26}, \"interrupt\": \"SIGINT_RECEIVED\", \"pane\": \"PROGRESS 6\\nPROGRESS 7\\nPROGRESS 8\\nPROGRESS 9\\nPROGRESS 10\\nPROGRESS 11\\nPROGRESS 12\\nPROGRESS 13\\nPROGRESS 14\\nPROGRESS 15\\nPROGRESS 16\\nPROGRESS 17\\nPROGRESS 18\\nPROGRESS 19\\nPROGRESS 20\\nPROGRESS 21\\nPROGRESS 22\\nPROGRESS 23\\nPROGRESS 24\\nPROGRESS 25\\nPROGRESS 26\\nSIGINT_RECEIVED\\nnode@539459cb2315:/workspace$\\n\"}",
+      "claude_before": "2.1.283 (Claude Code)",
+      "claude_after": "2.1.283 (Claude Code)",
+      "evidence": [
+        {
+          "path": "E06.jsonl",
+          "sha256": "de2549178ccd2379b7d1f0c623d287855ed31447895b71cf2e9faaccc2491837"
+        }
+      ]
+    },
+    {
+      "id": "E07",
+      "status": "pass",
+      "started_at": "2026-09-26T16:37:07.885389+00:00",
+      "finished_at": "2026-09-26T16:37:28.255400+00:00",
+      "command": "python3 scripts/gvisor-no-key-matrix.py --image sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf --pty-image sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0 --cases E07 --output NEW_DIRECTORY",
+      "exit_code": 0,
+      "expected": "0.5 CPU; measured ratio 0.35..0.65 and throttling",
+      "observed": "{\"wall_seconds\": 20.0823131059999, \"cpu_ratio\": 0.4998767296881149, \"throttled_periods\": 200, \"cpu.max\": \"50000 100000\"}",
+      "claude_before": "2.1.283 (Claude Code)",
+      "claude_after": "2.1.283 (Claude Code)",
+      "evidence": [
+        {
+          "path": "E07-cgroup.json",
+          "sha256": "1bf6e378215625cddcc58435346d0cbd72d0a900d4401ea450390995b005b10f"
+        },
+        {
+          "path": "E07.jsonl",
+          "sha256": "b01f6b647297831a7f229f5d0b098ee141971457ca4884b2e2e942d1489198a5"
+        }
+      ]
+    },
+    {
+      "id": "E08",
+      "status": "pass",
+      "started_at": "2026-09-26T16:37:28.255887+00:00",
+      "finished_at": "2026-09-26T16:37:30.072042+00:00",
+      "command": "python3 scripts/gvisor-no-key-matrix.py --image sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf --pty-image sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0 --cases E08 --output NEW_DIRECTORY",
+      "exit_code": 128,
+      "expected": "128 MiB limit causes bounded allocation rejection or container OOM",
+      "observed": "{\"exit_code\": 128, \"oom_kill_peak\": 0, \"state\": {\"Status\": \"exited\", \"Running\": false, \"Paused\": false, \"Restarting\": false, \"OOMKilled\": true, \"Dead\": false, \"Pid\": 0, \"ExitCode\": 137, \"Error\": \"\", \"StartedAt\": \"2026-09-26T16:37:28.384942109Z\", \"FinishedAt\": \"2026-09-26T16:37:29.936823107Z\"}, \"memory.max\": \"134217728\", \"host_available_min_mib\": 7128, \"allocation_output\": \"allocated_mib 8\\nallocated_mib 16\\nallocated_mib 24\\nallocated_mib 32\\nallocated_mib 40\\nallocated_mib 48\\nallocated_mib 56\\nallocated_mib 64\\nallocated_mib 72\\nallocated_mib 80\\nallocated_mib 88\\nallocated_mib 96\\nallocated_mib 104\\n\"}",
+      "claude_before": "2.1.283 (Claude Code)",
+      "claude_after": "2.1.283 (Claude Code)",
+      "evidence": [
+        {
+          "path": "E08-cgroup.json",
+          "sha256": "a8a7981570bc4cea6d88912dc1d3c94cf1bd1cac91cf6d7f87c43fc102ce4049"
+        },
+        {
+          "path": "E08.jsonl",
+          "sha256": "d4cf948ed76ab8f51ff81e8a3989f220496fa2bfe620919a5978259358d5f866"
+        }
+      ]
+    },
+    {
+      "id": "E09",
+      "status": "fail",
+      "started_at": "2026-09-26T16:37:30.072688+00:00",
+      "finished_at": "2026-09-26T16:37:31.850837+00:00",
+      "command": "python3 scripts/gvisor-no-key-matrix.py --image sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf --pty-image sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0 --cases E09 --output NEW_DIRECTORY",
+      "exit_code": 128,
+      "expected": "64 PID limit rejects bounded guest forks; host/guest distinction recorded",
+      "observed": "{\"runsc\": {\"guest_children\": null, \"failure\": null, \"host_task_peak\": 63, \"pids.max\": \"64\", \"host_limit_events_delta\": 0, \"children_reaped\": false, \"probe_exit_code\": 128, \"container_state\": {\"Status\": \"exited\", \"Running\": false, \"Paused\": false, \"Restarting\": false, \"OOMKilled\": false, \"Dead\": false, \"Pid\": 0, \"ExitCode\": 2, \"Error\": \"\", \"StartedAt\": \"2026-09-26T16:37:30.192070125Z\", \"FinishedAt\": \"2026-09-26T16:37:30.420099424Z\"}}, \"runc\": {\"guest_children\": 62, \"failure\": {\"errno\": 11, \"message\": \"[Errno 11] Resource temporarily unavailable\"}, \"host_task_peak\": 64, \"pids.max\": \"64\", \"host_limit_events_delta\": 1, \"children_reaped\": true, \"probe_exit_code\": 0, \"container_state\": {\"Status\": \"running\", \"Running\": true, \"Paused\": false, \"Restarting\": false, \"OOMKilled\": false, \"Dead\": false, \"Pid\": 14011, \"ExitCode\": 0, \"Error\": \"\", \"StartedAt\": \"2026-09-26T16:37:30.615963787Z\", \"FinishedAt\": \"0001-01-01T00:00:00Z\"}}}",
+      "claude_before": "2.1.283 (Claude Code)",
+      "claude_after": "2.1.283 (Claude Code)",
+      "evidence": [
+        {
+          "path": "E09-runc-cgroup.json",
+          "sha256": "2e4e4f03a7d70e51ba26df2051eeaa2fcb798843097df671d132d58a36f0ed98"
+        },
+        {
+          "path": "E09-runsc-cgroup.json",
+          "sha256": "8fb22e165e8cf6666e1c9e27140c9d2e28f92e992aaa74f2d83f1327bfff6ce2"
+        },
+        {
+          "path": "E09.jsonl",
+          "sha256": "0f4ac1e6468f7c221c13f30db35976dd2a9d3cf4482906545ab8a9bd59b242cb"
+        }
+      ]
+    },
+    {
+      "id": "E10",
+      "status": "not_run",
+      "started_at": null,
+      "finished_at": null,
+      "command": null,
+      "exit_code": null,
+      "expected": null,
+      "observed": null,
+      "claude_before": null,
+      "claude_after": null,
+      "evidence": []
+    }
+  ],
+  "cleanup": {
+    "status": "verified",
+    "evidence": [
+      {
+        "path": "cleanup.jsonl",
+        "sha256": "843423eaa65faf31f7428015fbccfdcf70327beb8c6044f2b940d8fe86df6a3b"
+      },
+      {
+        "path": "manifest.json",
+        "sha256": "9381515cf78d999f9be5886a813601883c81335e1093ca3cc56ffbc660c707c3"
+      }
+    ]
+  }
+}

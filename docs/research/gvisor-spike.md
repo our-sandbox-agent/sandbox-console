@@ -1,12 +1,12 @@
 # T01：Docker + runsc + Claude 最小驗證
 
-Refs #8，依賴 [#7 契約 PR](https://github.com/our-sandbox-agent/sandbox-console/pull/47)。狀態：**waiting environment；尚無 go/no-go 結論**。這是驗證準備，不是 #10 正式映像檔或 #11 Runner。
+Refs #8，依賴 [#7 契約 PR](https://github.com/our-sandbox-agent/sandbox-console/pull/47)。狀態：**無 key 實測已交付，E09 PID 阻塞；E05／E10 待憑證與預算，尚不可 go**。詳見 [2026-09-27 結果](gvisor-no-key-results-20260927.md)。這不是 #10 正式映像檔或 #11 Runner。
 
 下一輪操作入口：[測試環境交接、重跑流程與證據包](gvisor-environment.md)。使用 `scripts/gvisor-report.py` 產生十列 not_run 報告並檢查證據完整性；不能以工具或 CI 通過關閉 #8。
 
 ## 環境與限時
 
-需使用者提供已授權的 Linux 主機、連線設定位置與已配置的 Claude API key 位置。不要在 issue/PR 貼 key。現有本機是 macOS；未確認的 Docker context、SSH 主機或雲端帳戶不能當成授權。未租主機、未安裝 runtime、未呼叫付費模型。
+已在使用者授權的 Windows Hyper-V 專用 Linux VM 安裝 Docker／runsc，連線設定保留於本機私密交接。Claude 實測仍需專用 API key 的配置位置、模型與預算，不要在 issue/PR 貼 key。未確認的 Docker context、SSH 主機或雲端帳戶不能當成授權；本輪未呼叫付費模型。
 
 實驗限 2–3 工程人天：第一天版本與基本工作負載，第二天 PTY／持久化／限制，第三天重現失敗及整理判斷。等待主機不算測試成功，也不把等待時間假裝成實作估時。
 
@@ -30,7 +30,7 @@ runsc 安裝／Docker daemon 修改需主機維護者安排；重啟 daemon 可�
 
 ## 最小矩陣
 
-每列記：固定環境、完整但不含秘密的命令、開始/結束時間、exit code、stdout/stderr、觀測數值與結果。`pass/fail/not-run` 三種值；目前全部 not-run。測試值不是產品配額預設。
+每列記：固定環境、完整但不含秘密的命令、開始/結束時間、exit code、stdout/stderr、觀測數值與結果。`pass/fail/not-run` 三種值；本輪數值見獨立結果報告。下表定義驗收條件，測試值不是產品配額預設。
 
 | ID | 操作／證據 | 通過條件 |
 |---|---|---|
@@ -66,11 +66,11 @@ API key 不出現在命令參數、shell trace、`docker inspect` 整包輸出�
 
 | 欄位 | 目前結果 |
 |---|---|
-| 版本、主機架構、資源/headroom、image digest | 待授權環境 |
-| E01–E10 結果與證據 | 全部 not-run |
+| 版本、主機架構、資源/headroom、image digest | 見 2026-09-27 無 key 實測報告 |
+| E01–E10 結果與證據 | E01–E04／E06–E08 pass；E09 fail；E05／E10 not_run |
 | 模型花費及花費上限配置 | 未使用 |
-| 殘留測試資源及清理證據 | 未建立資源 |
-| 結論 | blocked_environment；不得解除 #10/#11 |
+| 殘留測試資源及清理證據 | 本輪容器依 manifest 清除；保留診斷 image 和證據 |
+| 結論 | E09 PID 限制待解；E05／E10 待憑證／預算；不得解除 #10/#11 |
 | 審查者、日期、後續範圍 | 待實測 |
 
 **go：** 全部必要列 pass，失敗重測有證據、無未解決隔離／限制問題，可進 #10/#11；仍不是完整受限試用放行。**no-go：** 必要工作負載或限制可重現失敗，列明縮小方案及風險，重新對齊後才換 runtime。**blocked：** 必要條件或證據缺失，保持等待。

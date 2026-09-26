@@ -1,0 +1,19 @@
+{
+  "host_alias": "local-hyperv-spike",
+  "authorization_ref": "user-authorized-local-vm-2026-09-26",
+  "operator": "Codex",
+  "kernel": "6.8.0-142-generic",
+  "arch": "x86_64",
+  "docker": "29.8.1",
+  "runsc": "runsc version release-20260921.0\nspec: 1.2.1",
+  "runsc_platform": "systrap",
+  "claude": "2.1.283 (Claude Code)",
+  "node": "v22.23.3",
+  "git": "git version 2.39.5",
+  "tmux": "tmux 3.3a",
+  "cgroup": "2/systemd",
+  "image_pin": "sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf",
+  "limits_and_headroom": "policy.json; initial available 7318 MiB; one resource probe at a time",
+  "model_budget": "No paid calls authorized for this run; 0 calls",
+  "credential_delivery_ref": "Not configured; no credentials injected"
+}

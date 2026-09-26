@@ -5,12 +5,18 @@ on:
     paths:
       - 'scripts/*gvisor*'
       - 'docs/research/gvisor-*'
+      - 'docs/research/evidence/**'
+      - 'diagnostics/gvisor/**'
+      - '.gitattributes'
       - '.github/workflows/gvisor-preflight.yml'
   push:
     branches: [main]
     paths:
       - 'scripts/*gvisor*'
       - 'docs/research/gvisor-*'
+      - 'docs/research/evidence/**'
+      - 'diagnostics/gvisor/**'
+      - '.gitattributes'
       - '.github/workflows/gvisor-preflight.yml'
 permissions:
   contents: read

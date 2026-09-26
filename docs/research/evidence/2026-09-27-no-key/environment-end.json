@@ -1,0 +1,7 @@
+{
+  "kernel": "6.8.0-142-generic",
+  "docker": "29.8.1",
+  "runsc": "runsc version release-20260921.0\nspec: 1.2.1",
+  "claude": "2.1.283 (Claude Code)",
+  "image_pin": "sha256:1728145d39d1e09111580fcd3a8a4931d0d0ebc0429caeb16ff295c86108e5cf"
+}

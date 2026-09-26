@@ -1,0 +1,13 @@
+{
+  "diagnostics/gvisor/.dockerignore": "b0964346914cfc8035a831053273daef6bf4c0bb30102aea29f3da8d2ae702b1",
+  "diagnostics/gvisor/Dockerfile": "8b314edb554aa04c4fedabe0ce74ca41153aaf857a81fba89d121c6ee54534ee",
+  "diagnostics/gvisor/package-lock.json": "3966132bcfa73b60b018884224d48b47efc7fdf6b5657477ec6b76217bf7337b",
+  "diagnostics/gvisor/package.json": "cd04f7a3408c108a0c496158132a97d542b1fc69627d7b5b9bbcabfa9b94c787",
+  "diagnostics/gvisor/probes/cpu.py": "385aa988e6a233a3bd949d8059b1380bdf912ac6af48fdb7df3ed8e05457526d",
+  "diagnostics/gvisor/probes/memory.py": "ea359f52614af401f8e0bd6d2e22489c8c92404324925474d47d2c87d64cdaaa",
+  "diagnostics/gvisor/probes/pids.py": "d78479cfff6b2055cf23f4f8d7426265a34aa582e2e58618beba096c9b0df354",
+  "diagnostics/gvisor/probes/progress.py": "8cbbde25306d61044bd4d868ec69573f60a650d9b68f597165cdb80b893fe279",
+  "scripts/gvisor-no-key-matrix.py": "e234f5894d29771934ebd389255f4939903c4d87546bdb8943bdf52f303a6eed",
+  "scripts/gvisor-preflight.py": "8a39889c92251fb2d9fcd6b144501c4571ef2d72060c1043a5bd4da54053bde3",
+  "scripts/gvisor-report.py": "926e584a593a6b2386cf5939de085c8c7468fcb8250294d5bd2ddb7e6dab4f78"
+}

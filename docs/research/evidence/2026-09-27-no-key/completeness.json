@@ -1,0 +1,9 @@
+{
+  "status": "incomplete",
+  "problems": [
+    "case[4]: not executed",
+    "case[9]: not executed"
+  ],
+  "runtime_go": false,
+  "note": "Evidence completeness only; human runtime review still required."
+}

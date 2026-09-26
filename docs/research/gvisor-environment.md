@@ -1,6 +1,6 @@
 # #8 測試環境交接與重跑流程
 
-這份文件交付測試準備；目前沒有授權 Linux 主機、Claude 憑證配置位置或 E01–E10 的實測證據。#8 保持 open，#10/#11 等人工審查確認 go 後才開始。命名與網域不影響這次測試。
+專用 Linux VM 已準備，無 key 項目的實測與 E09 PID 阻塞見 [2026-09-27 結果](gvisor-no-key-results-20260927.md)。Claude 憑證、模型與預算仍未配置；E05／E10 待第二包。#8 保持 open，#10/#11 等人工審查確認 go 後才開始。命名與網域不影響這次測試。
 
 ## 先交接什麼
 
@@ -46,6 +46,8 @@ python3 scripts/gvisor-preflight.py \
 
 report.environment 的 limits_and_headroom、model_budget、credential_delivery_ref 填核對過的數值摘要／私密記錄參照，不填實際秘密。啟動前設定 `DISABLE_AUTOUPDATER=1`，每列前後仍核對版本；變更 image/runtime/Claude 後開新 run，不混成同一環境的結果。
 
+`environment.runsc_platform` 必填 `systrap`、`kvm` 或 `ptrace`，依 daemon 實際 executable／flags 和 E01 host process 記錄，不靠預設值猜測。舊 report 缺此欄位會保持 incomplete。套件 hold 不會凍結 kernel；每輪重記 kernel、Docker、runsc、image，並比對起訖版本。
+
 ## PTY 重現必須選對 runtime
 
 原矩陣的簡寫省略 `--runtime`，可能誤跑預設 runc。以下僅為 **已授權 Linux 操作者** 的 E06 子測試，資源額度先填交接記錄；這些步驟尚未在本 PR 執行。
@@ -88,3 +90,5 @@ python3 scripts/gvisor-report.py --check "$SPIKE_EVIDENCE_DIR/report.json"
 | 0 / ready_for_review | 十列均記 pass 且材料完整；**只代表可人工審查，runtime_go 永遠為 false** |
 
 檢查器不解讀 shell 命令／log、不能證明 log 真實，也不驗證效能容差或隔離安全。OOM 測試可能以非零 exit code 正確通過，因此不是「所有 exit code=0 才 pass」。人工審查者必須核對每列實際符合矩陣，記錄 go/no-go、姓名、環境與證據連結。只有第二份實測 PR 經審查確認 go 才關 #8、解除 #10/#11 的等待；本準備 PR 只能用 Refs #8。
+
+路徑檢查會拒絕 `../` 和指向外部的 symlink，但無法證明檔案不是外部內容的 hard link；這是內部工具的已知限制。提交前仍須人工選取／遮蔽證據，不能把整個主機交接目錄（含 SSH key）放入 PR。
