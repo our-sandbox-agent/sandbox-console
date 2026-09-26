@@ -27,6 +27,7 @@ class ReportTests(unittest.TestCase):
         report = module.template()
         report["environment"] = {key: "test-only" for key in module.ENV_FIELDS}
         report["environment"]["image_pin"] = "sha256:" + "a" * 64
+        report["environment"]["runsc_platform"] = "systrap"
         report["preflight"] = {"verdict": "ready_for_manual_matrix_not_go", "evidence": self.evidence}
         for row in report["cases"]:
             row.update(status="pass", started_at="2026-09-26T10:00:00Z",
@@ -54,6 +55,20 @@ class ReportTests(unittest.TestCase):
         report["cases"][5]["status"] = "fail"
         result, code = module.check(report, self.root)
         self.assertEqual((result["status"], code), ("failures_recorded", 1))
+
+    def test_missing_or_unknown_runtime_platform_blocks(self):
+        for platform in (None, "", "unknown"):
+            report = self.complete()
+            report["environment"]["runsc_platform"] = platform
+            self.assertEqual(module.check(report, self.root)[1], 2)
+
+    def test_partial_matrix_with_real_failure_stays_incomplete(self):
+        report = self.complete()
+        report["cases"][4]["status"] = "not_run"
+        report["cases"][8]["status"] = "fail"
+        result, code = module.check(report, self.root)
+        self.assertEqual((result["status"], code), ("incomplete", 2))
+        self.assertFalse(result["runtime_go"])
 
     def test_missing_duplicate_case_or_version_drift_blocks(self):
         for mutate in (lambda r: r["cases"].pop(),
