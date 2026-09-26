@@ -1,0 +1,16 @@
+{"event": "fork", "children": 2, "guest_processes": 5}
+{"event": "fork", "children": 3, "guest_processes": 6}
+{"event": "fork", "children": 4, "guest_processes": 7}
+{"event": "fork", "children": 5, "guest_processes": 8}
+{"event": "fork", "children": 6, "guest_processes": 9}
+{"event": "fork", "children": 7, "guest_processes": 10}
+{"event": "fork", "children": 8, "guest_processes": 11}
+{"event": "fork", "children": 9, "guest_processes": 12}
+{"event": "fork", "children": 10, "guest_processes": 13}
+{"event": "fork", "children": 11, "guest_processes": 14}
+{"event": "fork", "children": 12, "guest_processes": 15}
+{"event": "fork", "children": 13, "guest_processes": 16}
+{"event": "fork", "children": 14, "guest_processes": 17}
+{"event": "fork", "children": 15, "guest_processes": 18}
+{"event": "fork", "children": 16, "guest_processes": 19}
+waiting on pid 4: waiting on PID 4 in sandbox "23b9a5606c6c05f71d745f32887663ca6069b1d0f0883e9bd8133dc25cf8b2f1": urpc method "containerManager.WaitPID" failed: EOF

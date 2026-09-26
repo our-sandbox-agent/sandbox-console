@@ -1,0 +1,2 @@
+SHELL_READY
+waiting on pid 3: waiting on PID 3 in sandbox "2600e37d8cd3e03f1078366d7ba9d782d9d23b7f6ff61b2daad60994623cfa4a": urpc method "containerManager.WaitPID" failed: EOF

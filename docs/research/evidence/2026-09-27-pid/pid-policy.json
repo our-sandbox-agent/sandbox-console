@@ -1,0 +1,13 @@
+{
+  "caps": [
+    64,
+    128,
+    256
+  ],
+  "max_forks": 272,
+  "hold_seconds": 3,
+  "case_timeout_seconds": 45,
+  "sample_seconds": 0.01,
+  "model_requests": 0,
+  "acceptance": "EAGAIN, existing shell and work responsive, reap, container alive, host headroom >= 2 GiB"
+}
